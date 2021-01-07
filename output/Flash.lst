@@ -1,0 +1,275 @@
+C51 COMPILER V9.00   FLASH                                                                 03/22/2019 14:58:05 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE FLASH
+OBJECT MODULE PLACED IN .\output\Flash.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Flash.c OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEN
+                    -D PRINT(.\output\Flash.lst) OBJECT(.\output\Flash.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         
+   4          Version:        V0.0
+   5          Date:           2016/05/18
+   6          History:
+   7                          V0.0            2016/05/18               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          
+  11          
+  12          extern void Uart232SendOneByte(void);
+  13          
+  14          BOOL WriteFlash(U16 Saddr);
+  15          BOOL BlackE2CheckUp(U16 Saddr);
+  16          BOOL WriteE2Sector(U16 Saddr);
+  17          BOOL E2DataCheckUp(U16 Saddr);
+  18          /*******************************************************************************
+  19          Function:BlackE2CheckUp(U16 Saddr, U16 num) 
+  20          Description:  
+  21          Input:          
+  22          Output: 
+  23          Others:
+  24          *******************************************************************************/
+  25          BOOL BlackE2CheckUp(U16 Saddr)
+  26          {
+  27   1          U16 i;
+  28   1          
+  29   1          FLASHCON = 0x01;
+  30   1          RSTSTAT = RSTSTAT;
+  31   1          
+  32   1          for(i=0; i<256; i++)
+  33   1          {
+  34   2              if(CBYTE[Saddr+i] != 0x00)
+  35   2              {
+  36   3                  return 0;
+  37   3              }
+  38   2          }
+  39   1          
+  40   1          return 1;
+  41   1      }
+  42          
+  43          /*******************************************************************************
+  44          Function:WriteE2Sector(U16 Saddr, U16 num) 
+  45          Description:  
+  46          Input:          
+  47          Output: 
+  48          Others:
+  49          *******************************************************************************/
+  50          BOOL WriteE2Sector(U16 Saddr)
+  51          {
+  52   1          U16 i;
+  53   1          U8 xdata *data ptr = 0;
+  54   1          BOOL result = 0;
+C51 COMPILER V9.00   FLASH                                                                 03/22/2019 14:58:05 PAGE 2   
+
+  55   1          
+  56   1          RSTSTAT = RSTSTAT;
+  57   1      
+  58   1          for(i=0; i<256; i++)
+  59   1          {
+  60   2              IB_OFFSET = Saddr+i;
+  61   2              XPAGE = (Saddr+i)>>8;
+  62   2              IB_DATA = *(ptr+i);
+  63   2              
+  64   2              if(ucUpDataLimitTime == 0)
+  65   2              {
+  66   3                  IB_CON1 = 0x6E;
+  67   3                  if(!EA)
+  68   3                  {
+  69   4                      IB_CON2 = 0x05;
+  70   4                      if(FLASHCON)
+  71   4                      {
+  72   5                          IB_CON3 = 0x0A;
+  73   5                          if(ucFlashWrValid == 0x55)
+  74   5                          {
+  75   6                              IB_CON4 = 0x09;
+  76   6                              if(XPAGE == (Saddr >> 8))
+  77   6                              {
+  78   7                                  IB_CON5 = 0x06;
+  79   7                                  _nop_();
+  80   7                                  _nop_();
+  81   7                                  _nop_();
+  82   7                                  _nop_();
+  83   7                                  _nop_();
+  84   7                                  
+  85   7                                  result = 1;
+  86   7                              }
+  87   6                              else break;
+  88   6                          }
+  89   5                          else break;
+  90   5                      }
+  91   4                      else break;
+  92   4                  }
+  93   3                  else break;
+  94   3              }
+  95   2              else break;
+  96   2          }
+  97   1          return result;
+  98   1      }
+  99          /*******************************************************************************
+ 100          Function:WriteFlash(U16 Saddr) 
+ 101          Description:  
+ 102          Input:          
+ 103          Output: 
+ 104          Others:
+ 105          *******************************************************************************/
+ 106          BOOL WriteFlash(U16 Saddr)
+ 107          {
+ 108   1          BOOL result = 0;
+ 109   1          RSTSTAT = RSTSTAT;
+ 110   1              EA = 0;
+ 111   1              FLASHCON = 0x01;
+ 112   1              XPAGE = Saddr >> 8;
+ 113   1          
+ 114   1          if(ucUpDataLimitTime == 0)
+ 115   1          {
+ 116   2              IB_CON1 = 0xE6;
+C51 COMPILER V9.00   FLASH                                                                 03/22/2019 14:58:05 PAGE 3   
+
+ 117   2              if(!EA)
+ 118   2              {
+ 119   3                  IB_CON2 = 0x05;
+ 120   3                  if(FLASHCON)
+ 121   3                  {
+ 122   4                      IB_CON3 = 0x0A;
+ 123   4                      if(ucFlashWrValid == 0x55)
+ 124   4                      {
+ 125   5                          IB_CON4 = 0x09;
+ 126   5                          if(XPAGE == (Saddr >> 8))
+ 127   5                          {
+ 128   6                              IB_CON5 = 0x06;
+ 129   6                              _nop_();
+ 130   6                              _nop_();
+ 131   6                              _nop_();
+ 132   6                              _nop_();
+ 133   6                              _nop_();
+ 134   6      
+ 135   6                              if(BlackE2CheckUp(Saddr))                   
+ 136   6                              {
+ 137   7                                  E2uiCheckFlag = 0x5AA5;
+ 138   7                                  
+ 139   7                                  if(WriteE2Sector(Saddr))                    
+ 140   7                                  {
+ 141   8                                      if(E2DataCheckUp(Saddr))              
+ 142   8                                      {
+ 143   9                                          result = 1;
+ 144   9                                      }
+ 145   8                                  }
+ 146   7                              }
+ 147   6                          }
+ 148   5                      }
+ 149   4                  }
+ 150   3              }
+ 151   2          }
+ 152   1      
+ 153   1          IB_CON1 = 0;
+ 154   1          IB_CON2 = 0;
+ 155   1          IB_CON3 = 0;
+ 156   1          IB_CON4 = 0;
+ 157   1          IB_CON5 = 0;
+ 158   1          
+ 159   1          FLASHCON = 0x00;
+ 160   1          XPAGE = 0x00;
+ 161   1          EA = 1;
+ 162   1          ucFlashWrValid = 0x00;
+ 163   1          
+ 164   1          return result;
+ 165   1      }
+ 166          
+ 167          /*******************************************************************************
+ 168          Function:E2DataCheckUp() 
+ 169          Description:  
+ 170          Input:          
+ 171          Output: 
+ 172          Others:
+ 173          *******************************************************************************/
+ 174          BOOL E2DataCheckUp(U16 Saddr)
+ 175          {
+ 176   1          U8 xdata *data ptr = 0;
+ 177   1          U16 i;
+ 178   1          
+C51 COMPILER V9.00   FLASH                                                                 03/22/2019 14:58:05 PAGE 4   
+
+ 179   1          FLASHCON = 0x01;
+ 180   1          RSTSTAT = RSTSTAT;
+ 181   1          
+ 182   1          for(i=0; i<256; i++)
+ 183   1          {
+ 184   2              if(CBYTE[Saddr+i] != *(ptr+i))
+ 185   2              {
+ 186   3                  return 0;
+ 187   3              }
+ 188   2          }
+ 189   1          return 1;
+ 190   1      }
+ 191          /*******************************************************************************
+ 192          Function:FlashProcess() 
+ 193          Description:  
+ 194          Input:          
+ 195          Output: 
+ 196          Others:
+ 197          *******************************************************************************/
+ 198          void FlashProcess(void)
+ 199          {       
+ 200   1              BOOL E2S0WRFailFlg=0, E2S1WRFailFlg=0;
+ 201   1          
+ 202   1          if(Info.Voltage >= 10000)                   //10V
+ 203   1          {
+ 204   2              if(!WriteFlash(DATAFLASH_ADDR))
+ 205   2              {
+ 206   3                  if(!WriteFlash(DATAFLASH_ADDR))
+ 207   3                  {
+ 208   4                      E2S0WRFailFlg = 1;
+ 209   4                  }   
+ 210   3              }
+ 211   2      
+ 212   2              if(!WriteFlash(DATAFLASH_ADDR2))
+ 213   2              {
+ 214   3                  if(!WriteFlash(DATAFLASH_ADDR2))
+ 215   3                  {
+ 216   4                      E2S1WRFailFlg = 1;
+ 217   4                  }   
+ 218   3              }
+ 219   2          }
+ 220   1          else
+ 221   1          {
+ 222   2              E2S0WRFailFlg = 1;
+ 223   2              E2S1WRFailFlg = 1;
+ 224   2          }
+ 225   1      
+ 226   1              if(bUartNeedAckFlg)             
+ 227   1          {
+ 228   2              bUartNeedAckFlg = 0;
+ 229   2              
+ 230   2              if(E2S0WRFailFlg & E2S1WRFailFlg)
+ 231   2              {
+ 232   3                  UART_SEND_NACK;
+ 233   3              }
+ 234   2              else
+ 235   2              {
+ 236   3                  UART_SEND_ACK;      
+ 237   3              }       
+ 238   2          }
+ 239   1      }
+ 240          
+C51 COMPILER V9.00   FLASH                                                                 03/22/2019 14:58:05 PAGE 5   
+
+ 241          
+ 242          
+ 243          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    455    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       4
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

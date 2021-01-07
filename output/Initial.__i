@@ -1,0 +1,1 @@
+"code\Initial.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\Initial.lst) OBJECT(.\output\Initial.obj)

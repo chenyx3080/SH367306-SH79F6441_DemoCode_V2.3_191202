@@ -1,0 +1,320 @@
+C51 COMPILER V9.00   ISP                                                                   12/09/2019 17:56:08 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE ISP
+OBJECT MODULE PLACED IN .\output\ISP.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\ISP.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTE
+                    -XTEND PRINT(.\output\ISP.lst) OBJECT(.\output\ISP.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "ISP.h"
+  11          
+  12          
+  13          /********************************************************************************
+  14          ucUartBuf[0]--Slave Addr
+  15          ucUartBuf[1]--length
+  16          ucUartBuf[2]--Command-H
+  17          ucUartBuf[3]--Command-L
+  18          ********************************************************************************/
+  19          void ISPProcess(void)
+  20          {
+  21   1              EA = 0;
+  22   1              SP = STACK - 1;
+  23   1              CLKCON  = 0x08;                                                         //SETB HFON
+  24   1              _nop_();
+  25   1              _nop_();
+  26   1              _nop_();
+  27   1              _nop_();
+  28   1              _nop_();
+  29   1              _nop_();
+  30   1              _nop_();
+  31   1              _nop_();
+  32   1              CLKCON |= 0x04;                                                         //SETB  FS, SYSCLK=24M
+  33   1      
+  34   1              ucUartBufPT = 0;
+  35   1              ucUartBuf[0] = 0;
+  36   1              ucUartBuf[1] = 0;
+  37   1              ucUartBuf[2] = 0;
+  38   1              ucUartBuf[3] = 0;
+  39   1              ucUartSndLength = 0;
+  40   1              
+  41   1              P0 = 0xF2;
+  42   1              P0PCR = 0xC2;
+  43   1              P0CR = 0x81;
+  44   1      
+  45   1              SCON = 0x50;            //配置Uart工作在模式1
+  46   1              SBRTH = 0xff;           //配置波特率参数，波特率9600
+  47   1              SBRTL = 0x64;           //计算公式：(int)X=FSY/(16*波特率) ;  SBRT=32768-X  ;   SFINE=（FSY/波特率）-16*X   FSY=24
+             -M
+  48   1              SFINE = 0x04;
+  49   1              SADDR = 0x0A;
+  50   1              SADEN = 0xFF;
+  51   1              
+  52   1              while(1)
+  53   1              {
+C51 COMPILER V9.00   ISP                                                                   12/09/2019 17:56:08 PAGE 2   
+
+  54   2                      RSTSTAT = 0x00;
+  55   2                      if(RI)
+  56   2                      {
+  57   3                              ucUartBuf[ucUartBufPT] = SBUF;
+  58   3                              ucUartBufPT++;
+  59   3                              if(ucUartBuf[0]  != SADDR)
+  60   3                              {
+  61   4                                      ucUartBufPT = 0;
+  62   4                                      ucUartBuf[1] = 0;
+  63   4                              }
+  64   3                              else if(ucUartBuf[1] == CMD_ISP_HANDSHAKE)
+  65   3                              {
+  66   4                                      if(ucUartBufPT > (ucUartBuf[3]+3))        //If a write operation, and complete all the data has been r
+             -eceived
+  67   4                                      {
+  68   5                                              ucUartBufPT = 0;
+  69   5                                              ucUartSndLength = 1;
+  70   5                                              if((ucUartBuf[8]!='I') || (ucUartBuf[9]!='S') || (ucUartBuf[10]!='P'))
+  71   5                                              {
+  72   6                                                      UART_SEND_NACK;
+  73   6                                              }
+  74   5                                              else
+  75   5                                              {
+  76   6                                                      UART_SEND_ACK;
+  77   6                                              }
+  78   5                                      }
+  79   4                              }
+  80   3                              else if(ucUartBufPT > 2)
+  81   3                              {
+  82   4                                      if(ucUartBufPT >= ucUartBuf[1])
+  83   4                                      {
+  84   5                                              ISPProcessCMD();
+  85   5                                              ucUartBufPT = 0;
+  86   5                                      }
+  87   4                              }
+  88   3                              RI = 0;
+  89   3                      }
+  90   2                      
+  91   2                      if(TI)
+  92   2                      {
+  93   3                              ucUartBufPT++;
+  94   3                              if(ucUartBufPT >= ucUartSndLength)
+  95   3                              {
+  96   4                                      REN = 1;                                       //Allow UART receive data
+  97   4                                      ucUartBufPT = 0;
+  98   4                              }
+  99   3                              else
+ 100   3                              {
+ 101   4                                      REN = 0;                                       //Disable Receive
+ 102   4                                      SBUF = ucUartBuf[ucUartBufPT];
+ 103   4                              }
+ 104   3                              TI = 0;
+ 105   3                      }
+ 106   2              }
+ 107   1      }
+ 108          
+ 109          /*******************************************************************************
+ 110          Function: ISPProcessCMD()
+ 111          Description:  
+ 112          Input:          
+ 113          Output: 
+ 114          Others:
+C51 COMPILER V9.00   ISP                                                                   12/09/2019 17:56:08 PAGE 3   
+
+ 115          *******************************************************************************/
+ 116          void ISPProcessCMD(void)
+ 117          {
+ 118   1              U8 data i, DataChksum, SendState;
+ 119   1              U16 data j, UartStartAddr, UartDataLen, UartChksum;
+ 120   1              
+ 121   1              if((ucUartBuf[2]==0xff) && (ucUartBuf[4]=='I') && (ucUartBuf[5]=='S') && (ucUartBuf[6]=='P'))
+ 122   1              {
+ 123   2      //Erase Sector
+ 124   2                      if(ucUartBuf[3] == UART_ERASE)                                  
+ 125   2                      {
+ 126   3                              FLASHCON = ucUartBuf[7];
+ 127   3      //                      if((FLASHCON&0x01) == 0)
+ 128   3      //                      {
+ 129   3      //                              UartDataLen = CODE_SECTOR*512;
+ 130   3      //                              XPAGE = ucUartBuf[8]<<1;                                        //Code Area
+ 131   3      //                      }
+ 132   3      //                      else
+ 133   3                              {
+ 134   4                                      UartDataLen = E2P_SECTOR*512;
+ 135   4                                      XPAGE = ucUartBuf[8]<<1;                     //EEPRom
+ 136   4                              }
+ 137   3                              
+ 138   3                  IB_CON1 = 0xE6;
+ 139   3                  IB_CON2 = 0x05;
+ 140   3                  IB_CON3 = 0x0A;
+ 141   3                  IB_CON4 = 0x09;
+ 142   3                  IB_CON5 = 0x06;
+ 143   3                  _nop_();
+ 144   3                  _nop_();
+ 145   3                  _nop_();
+ 146   3                  _nop_();
+ 147   3                  
+ 148   3                              
+ 149   3                              SendState = STATE_OK;                                           //Send Data: Erase OK
+ 150   3                              for(j=0; j<UartDataLen; j++)
+ 151   3                              {
+ 152   4                                      RSTSTAT = 0x00;
+ 153   4                                      if(CBYTE[j+(U16)ucUartBuf[8]*512] != 0)
+ 154   4                                      {
+ 155   5                                              SendState = STATE_ERROR;            //Send Data: Blank check error
+ 156   5                                              break;
+ 157   5                                      }
+ 158   4                              }
+ 159   3                              ucUartBufPT = 0;
+ 160   3                              ucUartSndLength = 1;
+ 161   3                              
+ 162   3                              REN = 0;                                   //Disable Receive
+ 163   3                              SBUF = SendState;                          //Send Data: Erase OK
+ 164   3                      }
+ 165   2      //Program
+ 166   2                      else if(ucUartBuf[3] == UART_PROGRAM)
+ 167   2                      {
+ 168   3                              DataChksum = 0;                             //checksum ok or error?
+ 169   3                              for(i=0; i<PROGRAM_LENGTH; i++)
+ 170   3                              {
+ 171   4                                      RSTSTAT = 0x00;
+ 172   4                                      DataChksum += ucUartBuf[10+i];
+ 173   4                              }
+ 174   3                              
+ 175   3                              if(DataChksum != ucUartBuf[10+i])
+ 176   3                              {
+C51 COMPILER V9.00   ISP                                                                   12/09/2019 17:56:08 PAGE 4   
+
+ 177   4                                      SendState = STATE_ERROR;                //Send Data: Erase Error
+ 178   4                              }
+ 179   3                              else
+ 180   3                              {                       
+ 181   4                                      FLASHCON = ucUartBuf[7];
+ 182   4                                      XPAGE = ucUartBuf[8];                   //EEPRom
+ 183   4                                      IB_OFFSET = ucUartBuf[9];
+ 184   4                                      for(i=0; i<PROGRAM_LENGTH; i++)
+ 185   4                                      {
+ 186   5                                              RSTSTAT = 0x00;
+ 187   5                                              IB_DATA = ucUartBuf[10+i];
+ 188   5                                              IB_CON1 = 0x6E;
+ 189   5                                              IB_CON2 = 0x05;
+ 190   5                                              IB_CON3 = 0x0A;
+ 191   5                                              IB_CON4 = 0x09;
+ 192   5                                              IB_CON5 = 0x06;
+ 193   5                                              _nop_();
+ 194   5                                              _nop_();
+ 195   5                                              _nop_();
+ 196   5                                              _nop_();
+ 197   5                                              IB_OFFSET++;
+ 198   5                                      }
+ 199   4                                      SendState = STATE_OK;                                   //Send Data: Erase OK
+ 200   4                              }
+ 201   3                              ucUartBufPT = 0;
+ 202   3                              ucUartSndLength = 1;
+ 203   3                              REN = 0;                                   //Disable Receive
+ 204   3                              SBUF = SendState;                          //Send Data: Erase OK
+ 205   3                      }
+ 206   2      
+ 207   2      // Checksum Check
+ 208   2                      else if(ucUartBuf[3] == UART_CHECKSUM_CHECK)
+ 209   2                      {
+ 210   3                              UartChksum = 0;
+ 211   3                              FLASHCON = ucUartBuf[7];
+ 212   3                              XPAGE = ucUartBuf[8];
+ 213   3                              UartStartAddr = ((U16)ucUartBuf[8]<<8) | ucUartBuf[9];
+ 214   3                              UartDataLen = ((U16)ucUartBuf[10]<<8) | ucUartBuf[11];
+ 215   3                              for(j=0; j<UartDataLen; j++)
+ 216   3                              {
+ 217   4                                      RSTSTAT = 0x00;
+ 218   4                                      UartChksum += CBYTE[UartStartAddr+j];
+ 219   4                              }
+ 220   3                              
+ 221   3                              ucUartBufPT = 0;
+ 222   3                              ucUartSndLength = 1;
+ 223   3                              if(UartChksum != (((U16)ucUartBuf[12]<<8)|ucUartBuf[13]))
+ 224   3                              {
+ 225   4                                      REN = 0;                                                                                //Disable Receive
+ 226   4                                      SBUF = STATE_ERROR;                                                     //Send Data: Checksum check error
+ 227   4                              }
+ 228   3                              else
+ 229   3                              {
+ 230   4                                      REN = 0;                                                                                //Disable Receive
+ 231   4                                      SBUF = STATE_OK;                               //Send Data: Checksum check ok
+ 232   4                              }
+ 233   3                      }
+ 234   2      //Read Code or EEPRom
+ 235   2                      else if(ucUartBuf[3] == UART_READ)
+ 236   2                      {
+ 237   3                              FLASHCON = ucUartBuf[7];
+ 238   3                              UartStartAddr = ((U16)ucUartBuf[8]<<8) | ucUartBuf[9];
+C51 COMPILER V9.00   ISP                                                                   12/09/2019 17:56:08 PAGE 5   
+
+ 239   3                              DataChksum = 0;
+ 240   3                              for(i=0; i<PROGRAM_LENGTH; i++)
+ 241   3                              {
+ 242   4                                      RSTSTAT = 0x00;
+ 243   4                                      ucUartBuf[i] = CBYTE[UartStartAddr+i];
+ 244   4                                      DataChksum += ucUartBuf[i];
+ 245   4                              }
+ 246   3                              ucUartBuf[i] = DataChksum;
+ 247   3      
+ 248   3                              ucUartBufPT = 0;
+ 249   3                              ucUartSndLength = PROGRAM_LENGTH+1;                   //Modify length,  Old value+64Bytes data+1byte ch
+             -ecksum
+ 250   3                              REN = 0;                                           //Disable Receive
+ 251   3                              SBUF = ucUartBuf[ucUartBufPT];                         //Send Data
+ 252   3                      }
+ 253   2      //Read 4Bytes info(Code and EEPRom Sector size)
+ 254   2                      else if(ucUartBuf[3] == UART_READ4B)
+ 255   2                      {                       
+ 256   3                              ucUartBuf[0] = CODE_SECTOR;
+ 257   3                              ucUartBuf[1] = CODE_SIZE;
+ 258   3                              ucUartBuf[2] = E2P_SECTOR;
+ 259   3                              ucUartBuf[3] = E2P_SIZE;
+ 260   3                              DataChksum = ucUartBuf[0]+ucUartBuf[1]+ucUartBuf[2]+ucUartBuf[3];
+ 261   3                              ucUartBuf[4] = DataChksum;
+ 262   3                              ucUartBufPT = 0;
+ 263   3                              ucUartSndLength = 4+1;                                //Modify length,  Old value+4Bytes data+1byte che
+             -cksum
+ 264   3                              REN = 0;                                           //Disable Receive
+ 265   3                              SBUF = ucUartBuf[ucUartBufPT];                         //Send Data
+ 266   3                      }
+ 267   2      //Soft Reset
+ 268   2                      else if(ucUartBuf[3] == UART_SOFT_RESET)
+ 269   2                      {
+ 270   3                              if(ucUartBuf[7] == 0x7f)
+ 271   3                              {
+ 272   4                                      FLASHCON = 0;
+ 273   4                                      XPAGE = 0;
+ 274   4                                      ucResetFlag=0x12;
+ 275   4                                      ((void(code*)(void))0x0000)();                  //jump to addr:0x0000                           
+ 276   4                              }
+ 277   3                      }
+ 278   2              }
+ 279   1      
+ 280   1              FLASHCON = 0;
+ 281   1              XPAGE = 0;
+ 282   1      }
+ 283          
+ 284          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    960    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      11
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

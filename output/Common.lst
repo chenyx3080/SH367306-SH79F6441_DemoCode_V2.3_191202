@@ -1,0 +1,225 @@
+C51 COMPILER V9.00   COMMON                                                                12/09/2019 17:56:05 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE COMMON
+OBJECT MODULE PLACED IN .\output\Common.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Common.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJE
+                    -CTEXTEND PRINT(.\output\Common.lst) OBJECT(.\output\Common.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "System.h"
+  10          
+  11          
+  12          #define RAM_CHECK_DATA                  0x5A
+  13          
+  14          /*******************************************************************************
+  15          Function: Delay1ms()
+  16          Description: system clock = 16.6MHz
+  17          Input: NULL
+  18          Output: NULL
+  19          Others: Ãÿ±◊¢“‚∏√∫Ø ˝µƒ—” ±◊º»∑–‘Œ Ã‚£¨‘⁄≤ªÕ¨”≈ªØµ»º∂ ±£¨∑¥ª„±‡≤ªÕ¨‘Ï≥…—” ±≤ª“ª÷¬£¨ µ≤‚»Áœ¬£∫
+  20          1.µ±≈‰÷√—°œÓ¿Ôµƒ¥˙¬Î”≈ªØµ»º∂…Ë÷√Œ™3 ±£¨j=1670£¨»ÙΩ˚÷πÀ˘”–÷–∂œ£¨‘Ú µº —” ±Œ™3.484ms£¨≤ªΩ˚÷π÷–∂œ‘Ú ‹÷–∂œ”∞œÏ
+             -£¨¥ÔµΩ3.804ms
+  21          2.µ±≈‰÷√—°œÓ¿Ôµƒ¥˙¬Î”≈ªØµ»º∂…Ë÷√Œ™3 ±£¨j=480£¨»ÙΩ˚÷πÀ˘”–÷–∂œ£¨‘Ú µº —” ±Œ™1.010ms£¨≤ªΩ˚÷π÷–∂œ‘Ú ‹÷–∂œ”∞œÏ£
+             -¨¥ÔµΩ1.104ms
+  22          3.µ±≈‰÷√—°œÓ¿Ôµƒ¥˙¬Î”≈ªØµ»º∂…Ë÷√Œ™7 ±£¨j=1670£¨»ÙΩ˚÷πÀ˘”–÷–∂œ£¨‘Ú µº —” ±Œ™1.002ms£¨≤ªΩ˚÷π÷–∂œ‘Ú ‹÷–∂œ”∞œÏ
+             -£¨¥ÔµΩ1.090ms
+  23          *******************************************************************************/
+  24          void Delay1ms(U8 delaycnt)
+  25          {
+  26   1              U8 i;
+  27   1              U16 j;
+  28   1              
+  29   1              for(i=0; i<delaycnt; i++)                               //system clock = 24MHz
+  30   1              {
+  31   2                      for(j=0; j<1670; j++)
+  32   2                      {
+  33   3                      }
+  34   2              }
+  35   1      }
+  36          
+  37          
+  38          /*******************************************************************************
+  39          Function:  ClrRam()
+  40          Description: Clear idata space:0x08~STACK_ADDR-1
+  41                                   Clear XDATA space:0x0000~0x2FFF  
+  42          Input:  NULL    
+  43          Output: NULL
+  44          Others:
+  45          *******************************************************************************/
+  46          void ClrRam(void)
+  47          {
+  48   1              U8 idata *ptr1;
+  49   1              U8 xdata *ptr2;
+  50   1              U8 xdata i;
+  51   1              U16 idata j;
+C51 COMPILER V9.00   COMMON                                                                12/09/2019 17:56:05 PAGE 2   
+
+  52   1      
+  53   1              for(i = 0x08; i <= STACK_ADDR-1; i++)   //clear ram address: 08H~STACK_ADDR-1
+  54   1              {
+  55   2                      ptr1 = (U8 idata *)i;
+  56   2                      *ptr1 = 0;
+  57   2              }
+  58   1      
+  59   1              for(j=0; j<=0xAFF; j++)                                 //clear XDATA address:0000H-0AFFH
+  60   1              {
+  61   2                      ptr2 = (U8 xdata *)j;
+  62   2                      *ptr2 = 0;
+  63   2              }
+  64   1      }
+  65          
+  66          
+  67          /*******************************************************************************
+  68          Function:
+  69          Description: Clear idata space:0x08~STACK_ADDR-1
+  70                                   Clear XDATA space:0x0000~0x2FFF  
+  71          Input:  NULL    
+  72          Output: NULL
+  73          Others:
+  74          *******************************************************************************/
+  75          void RamCheckProcess(void)
+  76          {
+  77   1          if((ucRamCheckFlg1  != RAM_CHECK_DATA)
+  78   1          || (ucRamCheckFlg2  != RAM_CHECK_DATA)
+  79   1          || (ucRamCheckFlg3  != RAM_CHECK_DATA)
+  80   1          || (ucRamCheckFlg4  != RAM_CHECK_DATA)
+  81   1          || (ucRamCheckFlg5  != RAM_CHECK_DATA)
+  82   1          || (ucRamCheckFlg6  != RAM_CHECK_DATA)
+  83   1          || (ucRamCheckFlg7  != RAM_CHECK_DATA)
+  84   1          || (ucRamCheckFlg8  != RAM_CHECK_DATA)
+  85   1          || (ucRamCheckFlg9  != RAM_CHECK_DATA)
+  86   1          || (ucRamCheckFlg10 != RAM_CHECK_DATA)
+  87   1          || (E2uiCheckFlag != 0x5AA5))
+  88   1          {
+  89   2              InitSysPara();
+  90   2          }
+  91   1      }
+  92          
+  93          
+  94          /*******************************************************************************
+  95          Function: MemorySet()
+  96          Description:
+  97          Input:  pt--memory÷∏’Î
+  98                          setval---–Ë“™∏≥÷µµƒ ˝æ›
+  99                          length---–Ë“™∏≥÷µµƒmemory≥§∂»(Byres)
+ 100          Output: 
+ 101          Others:
+ 102          *******************************************************************************/
+ 103          void MemorySet(U8 xdata *pt, U8 setval, U8 length)
+ 104          {
+ 105   1              U8 i;
+ 106   1              for(i=0; i<length; i++)
+ 107   1              {
+ 108   2                      *pt = setval;
+ 109   2                      pt++;
+ 110   2              }
+ 111   1      }
+ 112          
+ 113          
+C51 COMPILER V9.00   COMMON                                                                12/09/2019 17:56:05 PAGE 3   
+
+ 114          /*******************************************************************************
+ 115          Function: MemoryCopy()
+ 116          Description:
+ 117          Input:  source--‘¥Memory÷∏’Î
+ 118                          target---ƒøµƒMemory÷∏’Î
+ 119                          length---–Ë“™øΩ±¥µƒ ˝æ›≥§∂»(Byres)
+ 120          Output: 
+ 121          Others:
+ 122          *******************************************************************************/
+ 123          void MemoryCopy(U8 xdata *source, U8 xdata *target, U8 length)
+ 124          {
+ 125   1              U8 i;
+ 126   1              for(i=0; i<length; i++)
+ 127   1              {
+ 128   2                      *target = *source;
+ 129   2                      target++;
+ 130   2                      source++;
+ 131   2              }
+ 132   1      }
+ 133          
+ 134          
+ 135          /*******************************************************************************
+ 136          Function: IntoIdle()
+ 137          Description:  
+ 138          Input:          
+ 139          Output: 
+ 140          Others:
+ 141          *******************************************************************************/
+ 142          void IntoIdle(void)
+ 143          {
+ 144   1              SUSLO = 0x55;
+ 145   1              PCON |= 0x01;
+ 146   1              _nop_();
+ 147   1              _nop_();
+ 148   1              _nop_();
+ 149   1              _nop_();
+ 150   1              _nop_();
+ 151   1      }
+ 152          
+ 153          /*******************************************************************************
+ 154          Function: IntoPD(void)
+ 155          Description:  
+ 156          Input:          
+ 157          Output: 
+ 158          Others:
+ 159          *******************************************************************************/
+ 160          void IntoPD(void)
+ 161          {
+ 162   1              SUSLO = 0x55;
+ 163   1              PCON |= 0x02;
+ 164   1              _nop_();
+ 165   1              _nop_();
+ 166   1              _nop_();
+ 167   1              _nop_();
+ 168   1              _nop_();
+ 169   1      }
+ 170          
+ 171          
+ 172          /*******************************************************************************
+ 173          Function: ResetInit()
+ 174          Description:MCU≥Ã–Ú∏¥Œª£¨¥”0µÿ÷∑ø™ º÷¥––
+ 175          Input:          
+C51 COMPILER V9.00   COMMON                                                                12/09/2019 17:56:05 PAGE 4   
+
+ 176          Output: 
+ 177          Others:
+ 178          *******************************************************************************/
+ 179          void ResetInit(void)
+ 180          {       
+ 181   1              IEN0 = 0x00;                                            //Disable Interrupt
+ 182   1              IEN1 = 0x00;    
+ 183   1              TCON = 0x00;
+ 184   1              EXF0 = 0x00;
+ 185   1      
+ 186   1              SBRTH = 0x00;                                           //Disable UART0
+ 187   1              SBRTL = 0x00;
+ 188   1              SCON = 0x00;
+ 189   1              
+ 190   1              ((void(code*)(void))0x0000)();          
+ 191   1      }
+ 192          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    314    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----       2
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

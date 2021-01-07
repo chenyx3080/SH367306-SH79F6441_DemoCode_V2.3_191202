@@ -1,0 +1,1 @@
+"code\ExtE2PRom.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\ExtE2PRom.lst) OBJECT(.\output\ExtE2PRom.obj)

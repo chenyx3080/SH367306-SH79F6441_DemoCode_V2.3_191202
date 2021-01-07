@@ -1,0 +1,122 @@
+C51 COMPILER V9.00   AFE_MTP                                                               04/02/2019 17:24:56 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE AFE_MTP
+OBJECT MODULE PLACED IN .\output\AFE_MTP.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\AFE_MTP.c OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXT
+                    -END PRINT(.\output\AFE_MTP.lst) OBJECT(.\output\AFE_MTP.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         andyliu
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/08/28               Preliminary
+   8          ********************************************************************************/
+   9          #include "twi.h"
+  10          #include "system.h"
+  11          
+  12          extern bit TwiWrite(U8 SlaveID, U16 WrAddr, U8 Length, U8 xdata *WrBuf);
+  13          extern bit TwiRead(U8 SlaveID, U16 RdAddr, U8 Length, U8 xdata *RdBuf);
+  14          extern void Delay1ms(U8 delaycnt);
+  15          
+  16          
+  17          bit MTPWrite(U8 WrAddr, U8 Length, U8 xdata *WrBuf)
+  18          {
+  19   1              BOOL result;
+  20   1              U8 i;
+  21   1      
+  22   1          if(bAFE_ERR)
+  23   1          {
+  24   2              result = 0;
+  25   2          }
+  26   1          else
+  27   1          {
+  28   2              for(i=0; i<Length; i++)
+  29   2              {
+  30   3                      result = TwiWrite(IC_TWI_ID, WrAddr, 1, WrBuf);
+  31   3                      if(!result)
+  32   3                      {
+  33   4                      result = TwiWrite(IC_TWI_ID, WrAddr, 1, WrBuf);
+  34   4                      if(!result)
+  35   4                      {
+  36   5                          break;
+  37   5                      }
+  38   4                      }
+  39   3                      WrAddr++;
+  40   3                      WrBuf++;
+  41   3              }
+  42   2              Delay1ms(1);
+  43   2          }
+  44   1          
+  45   1          return result;  
+  46   1      }
+  47          
+  48          
+  49          
+  50          bit MTPRead(U8 RdAddr, U8 Length, U8 xdata *RdBuf)
+  51          {
+  52   1              BOOL result=1;
+  53   1      
+  54   1          if(bAFE_ERR)
+C51 COMPILER V9.00   AFE_MTP                                                               04/02/2019 17:24:56 PAGE 2   
+
+  55   1          {
+  56   2              result = 0;
+  57   2          }
+  58   1          else
+  59   1          {
+  60   2                      result = TwiRead(IC_TWI_ID, RdAddr, Length, RdBuf);
+  61   2                      if(!result)
+  62   2                      {
+  63   3                              result = TwiRead(IC_TWI_ID, RdAddr, Length, RdBuf);
+  64   3                      }
+  65   2          }
+  66   1              
+  67   1              return result;
+  68   1      }
+  69          
+  70          
+  71          
+  72          /*******************************************************************************
+  73          Function:ResetAFE() 
+  74          Description:  Reset SH367309 IC, Send Data:0xEA, 0xC0, 0xA5
+  75          Input:   NULL
+  76          Output: NULL
+  77          Others:
+  78          *******************************************************************************/
+  79          void ResetAFE(void)
+  80          {
+  81   1              U8 xdata WrBuf[2];
+  82   1      
+  83   1              WrBuf[0] = 0xC0;
+  84   1              WrBuf[1] = 0xA5;
+  85   1          
+  86   1          if(!bAFE_ERR)
+  87   1          {
+  88   2                  if(!TwiWrite(IC_TWI_ID, 0xEA, 1, WrBuf))               //0xEA, 0xC0¡A CRC
+  89   2              {
+  90   3                  TwiWrite(IC_TWI_ID, 0xEA, 1, WrBuf);
+  91   3              }
+  92   2          }
+  93   1      }
+  94          
+  95          
+  96          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    206    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       9
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

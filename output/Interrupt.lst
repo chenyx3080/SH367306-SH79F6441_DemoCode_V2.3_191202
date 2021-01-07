@@ -1,0 +1,155 @@
+C51 COMPILER V9.00   INTERRUPT                                                             12/09/2019 17:56:04 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE INTERRUPT
+OBJECT MODULE PLACED IN .\output\Interrupt.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Interrupt.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG O
+                    -BJECTEXTEND PRINT(.\output\Interrupt.lst) OBJECT(.\output\Interrupt.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          
+  11          /*******************************************************************************
+  12          Function: 
+  13          Description:  INT45
+  14          Input:          
+  15          Output: 
+  16          Others:
+  17          *******************************************************************************/
+  18          void InterruptINT4(void) interrupt 10
+  19          {
+  20   1              _push_(INSCON);
+  21   1          BANK0_SEL;
+  22   1      
+  23   1              if(IF45)                                   //306 ALARM
+  24   1              {
+  25   2                      IF45 = 0;
+  26   2                      if(bPDFlg||bIdleFlg)
+  27   2                      {
+  28   3                              InitClk();
+  29   3                              bWakeupFlg = 1;
+  30   3                      }
+  31   2                      bAlarmFlg = 1;
+  32   2              }
+  33   1      
+  34   1              _pop_(INSCON);
+  35   1      }
+  36          
+  37          
+  38          /*******************************************************************************
+  39          Function: 
+  40          Description:  INT0
+  41          Input:          
+  42          Output: 
+  43          Others:
+  44          *******************************************************************************/
+  45          void InterruptINT0(void) interrupt 0
+  46          {
+  47   1              _push_(INSCON);
+  48   1          BANK0_SEL;
+  49   1      
+  50   1              if(bPDFlg || bIdleFlg)                     //WakeUp
+  51   1              {
+  52   2                      InitClk();              
+  53   2      
+  54   2                      bWakeupFlg = 1; 
+C51 COMPILER V9.00   INTERRUPT                                                             12/09/2019 17:56:04 PAGE 2   
+
+  55   2              }
+  56   1      
+  57   1              _pop_(INSCON);
+  58   1      }
+  59          
+  60          
+  61          /*******************************************************************************
+  62          Function: InterruptTimer3()
+  63          Description:  20ms
+  64          Input:          
+  65          Output: 
+  66          Others:
+  67          *******************************************************************************/
+  68          void InterruptTimer3(void)      interrupt       5
+  69          {
+  70   1              _push_(INSCON);
+  71   1              
+  72   1              BANK1_SEL;
+  73   1              TL3 = 0xCD;              
+  74   1              TH3 = 0xFC;                     //25mS
+  75   1              TF3 = 0;
+  76   1              BANK0_SEL;
+  77   1      
+  78   1          bTimer25msFlg = 1;
+  79   1      
+  80   1          if(bLEDChgFlg)                                              //charging flicker led 25*20=500mS
+  81   1          {
+  82   2              if(++ucLedFlickCnt >= 20)
+  83   2              {
+  84   3                  ucLedFlickCnt = 0;
+  85   3                              LED_CHARGE ^= 1;
+  86   3              }
+  87   2          }
+  88   1              else
+  89   1              {
+  90   2                      LED_CHARGE = 0;
+  91   2              }
+  92   1      
+  93   1          if(bBLEOPEN)                                                // BLE flicker 25*10=250mS
+  94   1          {
+  95   2              if(++ucBLEFlickCnt >= 10)
+  96   2              {
+  97   3                  ucBLEFlickCnt = 0;
+  98   3                              LED1 ^= 1;
+  99   3              }
+ 100   2          }
+ 101   1              else
+ 102   1              {
+ 103   2                      LED1 = 0;
+ 104   2              }       
+ 105   1              
+ 106   1              if(++ucTimer3Cnt >= 40)                                   //1S
+ 107   1              {
+ 108   2                      ucTimer3Cnt = 0;
+ 109   2                      bTimer1sFlg = 1;
+ 110   2              }
+ 111   1      
+ 112   1              if(++ucUartTimeoutCnt >= 8)                     //If not Uart communication within 200ms, then clear 
+ 113   1              {
+ 114   2                      REN = 1;        
+ 115   2                      ucUartBufPT = 0;
+ 116   2              }
+C51 COMPILER V9.00   INTERRUPT                                                             12/09/2019 17:56:04 PAGE 3   
+
+ 117   1              
+ 118   1              ScanKey();                                                //Scankey not keyprocess ,in scankey will judge if have press key and set keyflag
+ 119   1      
+ 120   1              _pop_(INSCON);
+ 121   1      }
+ 122          
+ 123          
+ 124          //void InterruptINT3(void) interrupt 11  
+ 125          //{
+ 126          //      IE3 = 0;                           
+ 127          //}
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    316    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

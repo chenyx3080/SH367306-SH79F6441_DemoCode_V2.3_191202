@@ -1,0 +1,1 @@
+"code\GasGauge.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\GasGauge.lst) OBJECT(.\output\GasGauge.obj)

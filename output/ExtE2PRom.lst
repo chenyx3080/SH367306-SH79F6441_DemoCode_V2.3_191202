@@ -1,0 +1,436 @@
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE EXTE2PROM
+OBJECT MODULE PLACED IN .\output\ExtE2PRom.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\ExtE2PRom.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG O
+                    -BJECTEXTEND PRINT(.\output\ExtE2PRom.lst) OBJECT(.\output\ExtE2PRom.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/08/28               Preliminary
+   8          ********************************************************************************/
+   9          #include "System.h"
+  10          #include "ExtE2PRomRTC.h"
+  11          
+  12          
+  13          /*******************************************************************************
+  14          Function: 
+  15          Description:  
+  16          Input:          
+  17          Output: 
+  18          Others:
+  19          *******************************************************************************/
+  20          void E2PRomWrite(U16 WrAddr, U8 Length, U8 xdata *WrBuf)
+  21          {
+  22   1          U8 xdata wirtecount;
+  23   1          
+  24   1          wirtecount = 5;
+  25   1              while((!TwiWrite(E2PROM_ID, WrAddr, Length, WrBuf))&&(wirtecount))
+  26   1              {
+  27   2              Delay1ms(1);
+  28   2              wirtecount--;
+  29   2              }
+  30   1      }
+  31          
+  32          /*******************************************************************************
+  33          Function: 
+  34          Description:  
+  35          Input:          
+  36          Output: 
+  37          Others:
+  38          *******************************************************************************/
+  39          bit E2PRomRead(U16 RdAddr, U8 Length, U8 xdata *RdBuf)
+  40          {
+  41   1          BOOL result = 0;
+  42   1      
+  43   1          U8 xdata readcount;
+  44   1          
+  45   1          readcount = 5;
+  46   1              while((!result)&&(readcount))
+  47   1              {
+  48   2              result = TwiRead(E2PROM_ID, RdAddr, Length, RdBuf);
+  49   2              Delay1ms(1);
+  50   2              readcount--;
+  51   2              }
+  52   1          
+  53   1          return result;
+  54   1      }
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 2   
+
+  55          
+  56          
+  57          /*******************************************************************************
+  58          Function: 
+  59          Description:  
+  60          Input:          
+  61          Output: 
+  62          Others:
+  63          *******************************************************************************/
+  64          void E2PRomErase(void)
+  65          {
+  66   1              U16 i;
+  67   1              U8 xdata WrBuf[8];
+  68   1              
+  69   1              MemorySet(WrBuf, 0, 8);                         //clr Info.uiVCell[]
+  70   1              
+  71   1              for(i=0; i<(E2PROM_SIZE/32-1); i++)
+  72   1              {
+  73   2                      RSTSTAT = 0x00;
+  74   2                      E2PRomWrite(i*32+31, 1, WrBuf);
+  75   2              }
+  76   1              
+  77   1              E2PRomWrite(E2PROM_BOOT_ADDR, 8, WrBuf);
+  78   1              uiE2PDataAddr = 0;
+  79   1      }
+  80          
+  81          
+  82          /*******************************************************************************
+  83          Function: 
+  84          Description:  
+  85          Input:          
+  86          Output: 
+  87          Others:
+  88          *******************************************************************************/
+  89          void InitE2PRom(void)
+  90          {
+  91   1              U8 xdata RdBuf[8];
+  92   1      
+  93   1          if(!bEnEEPRomBK)
+  94   1          {
+  95   2              bE2RTCON = 0;
+  96   2          }
+  97   1          else if(!bE2RTCON)
+  98   1          {
+  99   2              bE2RTCON = 1;
+ 100   2                      E2PRomRead(E2PROM_BOOT_ADDR, 8, RdBuf);
+ 101   2      
+ 102   2                      RdBuf[2] = RdBuf[0]+RdBuf[1];
+ 103   2                      RdBuf[6] = RdBuf[4]+RdBuf[5];   
+ 104   2      
+ 105   2                      if(RdBuf[2] == RdBuf[3])
+ 106   2                      {
+ 107   3                              uiE2PDataAddr = ((U16)RdBuf[0]<<8) + RdBuf[1];
+ 108   3                      }
+ 109   2                      else if(RdBuf[6] == RdBuf[7])
+ 110   2                      {
+ 111   3                              uiE2PDataAddr = ((U16)RdBuf[4]<<8) + RdBuf[5];
+ 112   3                      }
+ 113   2                      else
+ 114   2                      {
+ 115   3                              uiE2PDataAddr = 0;
+ 116   3                      }
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 3   
+
+ 117   2              }
+ 118   1      }
+ 119          
+ 120          
+ 121          /*******************************************************************************
+ 122          Function: 
+ 123          Description:  
+ 124          Input:          
+ 125          Output: 
+ 126          Others:
+ 127          *******************************************************************************/
+ 128          void E2PRomBKRTC(void)
+ 129          {
+ 130   1              U8 xdata WrBuf[9];
+ 131   1              U8 i, checksum=0;
+ 132   1              
+ 133   1              RTCReadTime();
+ 134   1              MemoryCopy((U8 xdata *)&(RTC.Second), WrBuf, 3);
+ 135   1              MemoryCopy((U8 xdata *)&(RTC.Date), WrBuf + 3, 3);
+ 136   1              for(i=0; i<6; i++)
+ 137   1              {
+ 138   2                      checksum += WrBuf[i];
+ 139   2              }
+ 140   1              WrBuf[6] = checksum;
+ 141   1              WrBuf[7] = 0x5A;
+ 142   1              
+ 143   1              E2PRomWrite(E2PROM_RTC_ADDR, 8, WrBuf);
+ 144   1      }
+ 145          
+ 146          
+ 147          /*******************************************************************************
+ 148          Function: 
+ 149          Description:  
+ 150          Input:          
+ 151          Output: 
+ 152          Others:
+ 153          *******************************************************************************/
+ 154          void E2PRomBKBoot(void)
+ 155          {
+ 156   1              U8 xdata WrBuf[8];
+ 157   1      
+ 158   1              WrBuf[0] = (uiE2PDataAddr>>8);
+ 159   1              WrBuf[1] = uiE2PDataAddr;
+ 160   1              WrBuf[3] = WrBuf[0]+WrBuf[1];                           //Calculate checksum
+ 161   1      
+ 162   1              WrBuf[4] = WrBuf[0];
+ 163   1              WrBuf[5] = WrBuf[1];
+ 164   1              WrBuf[7] = WrBuf[3];
+ 165   1              
+ 166   1              E2PRomWrite(E2PROM_BOOT_ADDR, 8, WrBuf);
+ 167   1      } 
+ 168          
+ 169          
+ 170          /*******************************************************************************
+ 171          Function: 
+ 172          Description:  
+ 173          Input:          
+ 174          Output: 
+ 175          Others:
+ 176          *******************************************************************************/
+ 177          void E2PRomBKData(U8 BKType)
+ 178          {
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 4   
+
+ 179   1              U8 xdata WrBuf[32];     
+ 180   1      
+ 181   1          if(BKType == 0x10)                  //Charge shart
+ 182   1          {
+ 183   2              MemoryCopy((U8 xdata *)&ucRTCBuf[0], WrBuf, 3);
+ 184   2                      MemoryCopy((U8 xdata *)&ucRTCBuf[4], WrBuf + 3, 3);
+ 185   2          }
+ 186   1          else
+ 187   1          {
+ 188   2              RTCReadTime();
+ 189   2                      MemoryCopy((U8 xdata *)&(RTC.Second), WrBuf, 3);
+ 190   2                      MemoryCopy((U8 xdata *)&(RTC.Date), WrBuf + 3, 3);
+ 191   2          }
+ 192   1              
+ 193   1              WrBuf[6] = (Info.uiPackStatus>>8);
+ 194   1              WrBuf[7] = Info.uiPackStatus;
+ 195   1              WrBuf[8] = (Info.uiBatStatus>>8);
+ 196   1              WrBuf[9] = Info.uiBatStatus;
+ 197   1              WrBuf[10] = (Info.ulFCC>>24);
+ 198   1              WrBuf[11] = (Info.ulFCC>>16);
+ 199   1              WrBuf[12] = (Info.ulFCC>>8);
+ 200   1              WrBuf[13] = Info.ulFCC;
+ 201   1              WrBuf[14] = (Info.ulRC>>24);
+ 202   1              WrBuf[15] = (Info.ulRC>>16);
+ 203   1              WrBuf[16] = (Info.ulRC>>8);
+ 204   1              WrBuf[17] = Info.ulRC;
+ 205   1              WrBuf[18] = (Info.ulVoltage>>24);
+ 206   1              WrBuf[19] = (Info.ulVoltage>>16);
+ 207   1              WrBuf[20] = (Info.ulVoltage>>8);
+ 208   1              WrBuf[21] = Info.ulVoltage;
+ 209   1              WrBuf[22] = (Info.slCurr>>24);
+ 210   1              WrBuf[23] = (Info.slCurr>>16);
+ 211   1              WrBuf[24] = (Info.slCurr>>8);
+ 212   1              WrBuf[25] = Info.slCurr;
+ 213   1              WrBuf[26] = (Info.uiTemp1>>8);
+ 214   1              WrBuf[27] = Info.uiTemp1;
+ 215   1              WrBuf[28] = (Info.uiCycleCount>>8);
+ 216   1              WrBuf[29] = Info.uiCycleCount;
+ 217   1              WrBuf[30] = BKType;
+ 218   1              WrBuf[31] = 0x5A;
+ 219   1      
+ 220   1              E2PRomWrite(uiE2PDataAddr, 32, WrBuf);
+ 221   1              
+ 222   1              uiE2PDataAddr += 32;
+ 223   1              if(uiE2PDataAddr >= E2PROM_BOOT_ADDR)
+ 224   1              {
+ 225   2                      uiE2PDataAddr = 0;
+ 226   2              }
+ 227   1      
+ 228   1              E2PRomBKBoot();
+ 229   1      }
+ 230          
+ 231          
+ 232          /*******************************************************************************
+ 233          Function: 
+ 234          Description:  
+ 235          Input:          
+ 236          Output: 
+ 237          Others:
+ 238          *******************************************************************************/
+ 239          void UartRdE2PRom(void)
+ 240          {       
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 5   
+
+ 241   1              U16 RdAddr;
+ 242   1          
+ 243   1          RdAddr = ((U16)ucUartBuf[UART_CMD_NO]-CMD_RD_EEPROM)*128+((U16)ucSubClassID-0x80)*4096;
+ 244   1          
+ 245   1              E2PRomRead(RdAddr, ucUartBuf[UART_LENGTH], &ucUartBuf[UART_DATA]);
+ 246   1          
+ 247   1          ucUartBuf[UART_DATA+ucUartBuf[UART_LENGTH]] = CRC8cal(&ucUartBuf,ucUartBuf[UART_LENGTH]+UART_DATA);
+ 248   1              
+ 249   1              UART_SEND_DATA;                 //Start Send Data; Set UART REG
+ 250   1      }
+ 251          
+ 252          
+ 253          /*******************************************************************************
+ 254          Function: 
+ 255          Description:  
+ 256          Input:          
+ 257          Output: 
+ 258          Others:
+ 259          *******************************************************************************/
+ 260          void UartRdRTC(void)
+ 261          {
+ 262   1              RTCReadTime();
+ 263   1              MemoryCopy((U8 xdata *)&(RTC.Second), &ucUartBuf[UART_DATA], 3);
+ 264   1              MemoryCopy((U8 xdata *)&(RTC.Date), &ucUartBuf[UART_DATA + 3], 3);
+ 265   1              
+ 266   1              ucUartBuf[UART_DATA+ucUartBuf[UART_LENGTH]] = CRC8cal(&ucUartBuf,ucUartBuf[UART_LENGTH]+UART_DATA);
+ 267   1              
+ 268   1              UART_SEND_DATA;                 //Start Send Data; Set UART REG
+ 269   1      }
+ 270          
+ 271          
+ 272          /*******************************************************************************
+ 273          Function: 
+ 274          Description:  
+ 275          Input:          
+ 276          Output: 
+ 277          Others:
+ 278          *******************************************************************************/
+ 279          void E2PRomBKProcess(void)
+ 280          {
+ 281   1              U8 BKType;
+ 282   1      
+ 283   1              InitE2PRom();    
+ 284   1          InitRTC();
+ 285   1              
+ 286   1              if(bE2PErase)
+ 287   1              {
+ 288   2                      bE2PErase = 0;
+ 289   2                      E2PRomErase();
+ 290   2              }
+ 291   1              
+ 292   1              if(bE2PRdData)
+ 293   1              {
+ 294   2                      bE2PRdData = 0;
+ 295   2                      UartRdE2PRom();
+ 296   2              }
+ 297   1              
+ 298   1              if(bRTCRdTime)
+ 299   1              {
+ 300   2                      bRTCRdTime = 0;
+ 301   2                      UartRdRTC();
+ 302   2              }
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 6   
+
+ 303   1              
+ 304   1              if(bE2PBKRtc)
+ 305   1              {
+ 306   2                      bE2PBKRtc = 0;
+ 307   2                      E2PRomBKRTC();
+ 308   2              }
+ 309   1              
+ 310   1              if(bE2PBKChgStart)
+ 311   1              {
+ 312   2                      bE2PBKChgStart = 0;
+ 313   2                      BKType = 0x10;
+ 314   2                      E2PRomBKData(BKType);
+ 315   2              }
+ 316   1              
+ 317   1              if(bE2PBKChgStop)
+ 318   1              {
+ 319   2                      bE2PBKChgStop = 0;
+ 320   2                      BKType = 0x01;
+ 321   2                      E2PRomBKData(BKType);
+ 322   2              }
+ 323   1              
+ 324   1              if(bE2PBKDsgEnd)
+ 325   1              {
+ 326   2                      bE2PBKDsgEnd = 0;
+ 327   2                      BKType = 0x02;
+ 328   2                      E2PRomBKData(BKType);
+ 329   2              }
+ 330   1      }
+ 331          
+ 332          
+ 333          /*******************************************************************************
+ 334          Function: 
+ 335          Description:  
+ 336          Input:          
+ 337          Output: 
+ 338          Others:
+ 339          *******************************************************************************/
+ 340          void E2PRomBKCheck(void)
+ 341          {
+ 342   1              InitE2PRom();    
+ 343   1          InitRTC();
+ 344   1              
+ 345   1              if(++ucRTCBKTime1 >= E2ucRTCBKDelay)
+ 346   1              {
+ 347   2                      ucRTCBKTime1 = 0;
+ 348   2                      RTCReadTime();
+ 349   2              }
+ 350   1              
+ 351   1              if(++uiRTCBKTime2 >= 3600)                                      //1h
+ 352   1              {
+ 353   2                      uiRTCBKTime2 = 0;
+ 354   2                      bE2PProcessFlg = 1;
+ 355   2                      bE2PBKRtc = 1;
+ 356   2              }
+ 357   1      
+ 358   1              if(!bCHGING)                                                                                    
+ 359   1              {
+ 360   2                      bDsgToChgFlg = 1;
+ 361   2                      if(bChgToDsgFlg)
+ 362   2                      {
+ 363   3                              bChgToDsgFlg = 0;
+ 364   3                              bE2PProcessFlg = 1;
+C51 COMPILER V9.00   EXTE2PROM                                                             12/09/2019 17:56:07 PAGE 7   
+
+ 365   3                              bE2PBKChgStop = 1;                      
+ 366   3                      }                       
+ 367   2                      if(bFD && bE2PBKDsgEndValid)
+ 368   2                      {
+ 369   3                              bE2PBKDsgEndValid = 0;
+ 370   3                              bE2PProcessFlg = 1;
+ 371   3                              bE2PBKDsgEnd = 1;
+ 372   3                      }
+ 373   2                      else if (!bFD)
+ 374   2                      {
+ 375   3                              bE2PBKDsgEndValid = 1;
+ 376   3                      }                       
+ 377   2              }
+ 378   1      
+ 379   1              if((bDsgToChgFlg && Info.slCurr>=E2uiChgBKCur))
+ 380   1              {
+ 381   2                      if(!uiCHGValidTime)
+ 382   2              {
+ 383   3                      RTCReadTime();
+ 384   3                      MemoryCopy((U8 xdata *)&RTC, ucRTCBuf, 7);    
+ 385   3              }
+ 386   2      
+ 387   2              if(++uiCHGValidTime > ((U16)E2ucChgBKDelay*60))         //1∑÷÷”
+ 388   2                      {
+ 389   3                              uiCHGValidTime = 0;
+ 390   3                              bChgToDsgFlg = 1;
+ 391   3                              bDsgToChgFlg = 0;
+ 392   3                              bE2PProcessFlg = 1;
+ 393   3                              bE2PBKChgStart = 1;                                     
+ 394   3                      }
+ 395   2              }
+ 396   1              else
+ 397   1              {
+ 398   2                      uiCHGValidTime = 0;
+ 399   2              }
+ 400   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1537    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      82
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

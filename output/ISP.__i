@@ -1,0 +1,1 @@
+"code\ISP.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\ISP.lst) OBJECT(.\output\ISP.obj)

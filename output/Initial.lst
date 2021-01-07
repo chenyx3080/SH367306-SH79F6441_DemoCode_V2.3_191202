@@ -1,0 +1,569 @@
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE INITIAL
+OBJECT MODULE PLACED IN .\output\Initial.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Initial.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJ
+                    -ECTEXTEND PRINT(.\output\Initial.lst) OBJECT(.\output\Initial.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "System.h"
+  10          #include "ExtE2PRomRTC.h"
+  11          #include "GasGauge.h"
+  12          #include "ISP.h"
+  13          
+  14          
+  15          extern void SystemIntoPD(void);
+  16          
+  17          /*******************************************************************************
+  18          Function:InitSealCalibrate() 
+  19          Description:  
+  20          Input:  
+  21          Output: 
+  22          Others:
+  23          *******************************************************************************/
+  24          void InitSealCalibrate(void)
+  25          {
+  26   1              if(E2ucCalibrated == CALI_FLAG)                         //Initialize the Calibration flag
+  27   1              {
+  28   2                      bCAL = 1;
+  29   2              }
+  30   1              else
+  31   1              {
+  32   2                      bCAL = 0;
+  33   2              }
+  34   1      }
+  35          
+  36          
+  37          
+  38          /*******************************************************************************
+  39          Function:InitVar() 
+  40          Description:  
+  41          Input:  NULL    
+  42          Output: NULL
+  43          Others:
+  44          *******************************************************************************/
+  45          void InitVar(void)
+  46          {
+  47   1              bTimer1sFlg = 0;
+  48   1              bTimer25msFlg = 0;
+  49   1              bDataFlashFail = 0;
+  50   1              bWriteFlashFlg = 0;
+  51   1              bUpdataFlashFlg = 0;
+  52   1              bCADCFlg = 0;
+  53   1              bISPFlg = 0;
+  54   1      
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 2   
+
+  55   1              bUartSndAckFlg = 0;
+  56   1              bAlarmFlg = 0;
+  57   1              bLEDOpen = 0;
+  58   1              bLEDChgFlg = 0;
+  59   1              bBLEOPEN = 0;
+  60   1              bCalibrationFlg = 0;
+  61   1      
+  62   1              ucTimer3Cnt = 0;
+  63   1      
+  64   1              bChkLoadFlg = 0;
+  65   1              bChkChgerFlg = 0;
+  66   1              bChkChgerRFlg = 0;
+  67   1              bLoadConectFlg = 0;
+  68   1              bChgerConectFlg = 0;
+  69   1              bUVBkFlg = 0;
+  70   1      
+  71   1              ucFlashWrValid = 0;
+  72   1              ucWriteFlashCnt = 0;
+  73   1              ucUartTimeoutCnt = 0;
+  74   1              bIdleFlg = 0;
+  75   1              bPDFlg = 0;
+  76   1              bWakeupFlg = 0;
+  77   1              ucIdleTimerCnt = 0;
+  78   1              ucPDTimerCnt = 0;
+  79   1              bKeyFlg = 0;
+  80   1              ucLEDTimeCnt = 0;
+  81   1              slCadcCurAverage = 0;
+  82   1              ucUpDataLimitTime = 0;
+  83   1              uiPackStatus = 0;
+  84   1              uiBatStatus = 0;
+  85   1              AFESCONF2Bk = 0;
+  86   1      
+  87   1              ucOVcnt = 0;
+  88   1              ucOVRcnt = 0;
+  89   1              ucUVcnt = 0;
+  90   1              ucUVRcnt = 0;
+  91   1              ucOTCcnt = 0;
+  92   1              ucOTCRcnt = 0;
+  93   1              ucUTCcnt = 0;
+  94   1              ucUTCRcnt = 0;
+  95   1              ucOTDcnt = 0;
+  96   1              ucOTDRcnt = 0;
+  97   1              ucUTDcnt = 0;
+  98   1              ucUTDRcnt = 0;
+  99   1              ucExtcaliSwitch1 = 0;
+ 100   1              ucExtcaliFlag = 0;
+ 101   1      
+ 102   1              bBalanceStateFlg = 0;
+ 103   1              bCTOValidFlg = 0;
+ 104   1          bCellOpenDecFlag = 0;
+ 105   1          bBalancingFlg = 0;
+ 106   1          ucCellOpenDecCnt = 0;
+ 107   1          ucBalanceStep = BALANCE_ENABLE;
+ 108   1          ucCtoCnt = 0;
+ 109   1      
+ 110   1              ucCadcCnt = 0;
+ 111   1              MemorySet((U8 xdata *)slCadcCurBuf, 0, sizeof(slCadcCurBuf));
+ 112   1      
+ 113   1              bUartSndAckFlg = 0;
+ 114   1      
+ 115   1              ucBalanceTimeCnt = 0;
+ 116   1              uiBalanceChannel = 0;
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 3   
+
+ 117   1              ucLEDTimeCnt = 0;
+ 118   1              bLEDOpen = 0;
+ 119   1              bPCSleepFlg = 0;
+ 120   1              ucTempeMiddle = 80;
+ 121   1              
+ 122   1              MemorySet((U8 xdata *)Info.uiVCell, 0, sizeof(Info.uiVCell));   //clr Info.uiVCell[]
+ 123   1              Info.slCurr = 0;
+ 124   1              Info.uiTemp1 = 2731;                            //0
+ 125   1              Info.uiTemp2 = 2731;                            //0
+ 126   1      }
+ 127          
+ 128          
+ 129          /*******************************************************************************
+ 130          Function: InitSysPara()
+ 131          Description: DataFlash Data write to XRAM  
+ 132          Input:  NULL    
+ 133          Output: NULL
+ 134          Others:
+ 135          *******************************************************************************/
+ 136          void InitSysPara(void)
+ 137          {
+ 138   1          U32 i;
+ 139   1          
+ 140   1          //Starting from the DATAFLASH_ADDR CODE address, read the DATAFLASH_LEN length of the data to the XDAT
+             -A
+ 141   1              if(!ReadMcuFlash(DATAFLASH_ADDR, DATAFLASH_MAP_ADDR, 512))                              
+ 142   1          {
+ 143   2              if(!ReadMcuFlash(DATAFLASH_ADDR2, DATAFLASH_MAP_ADDR, 512))         
+ 144   2              {
+ 145   3                  while(1)
+ 146   3                  {
+ 147   4                      RSTSTAT = 0x00;
+ 148   4                      SystemIntoPD();
+ 149   4                  }
+ 150   3              }
+ 151   2                      else
+ 152   2              {
+ 153   3                  FLASHCON = 0x01;
+ 154   3                  if(CWORD[DATAFLASH_OK_FLG1_ADDR/2] != 0x5AA5)
+ 155   3                  {
+ 156   4                      UpEepromNoDelay();
+ 157   4                      if(!WriteMcuFlash(DATAFLASH_ADDR))                                 
+ 158   4                      {
+ 159   5                          UpEepromNoDelay();
+ 160   5                          WriteMcuFlash(DATAFLASH_ADDR);      
+ 161   5                      }
+ 162   4                  }
+ 163   3                  FLASHCON = 0x00;    
+ 164   3              }
+ 165   2          }
+ 166   1          else
+ 167   1              {
+ 168   2                      FLASHCON = 0x01;
+ 169   2                      if(CWORD[DATAFLASH_OK_FLG2_ADDR/2] != 0x5AA5)
+ 170   2                      {
+ 171   3                  UpEepromNoDelay();
+ 172   3                              if(!WriteMcuFlash(DATAFLASH_ADDR2))
+ 173   3                              {
+ 174   4                      UpEepromNoDelay();
+ 175   4                                      WriteMcuFlash(DATAFLASH_ADDR2); 
+ 176   4                              }
+ 177   3                      }
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 4   
+
+ 178   2                      FLASHCON = 0x00;                
+ 179   2              }
+ 180   1      
+ 181   1          ucFlashWrValid = 0x00;
+ 182   1                      
+ 183   1          //intial AFE data
+ 184   1          AFE_Set;                                                                                                        
+ 185   1      
+ 186   1          //intial Info           
+ 187   1              uiPackConfig = E2uiPackConfigMap;
+ 188   1              Info.slCurr = 0;                                                                //After the program is reset, the current default is "0",update after 1'seconds
+ 189   1              Info.ulFCC = E2ulFCC;
+ 190   1              Info.uiCycleCount = E2uiCycleCount;
+ 191   1              Info.uiPackStatus = uiPackStatus;
+ 192   1              Info.uiBatStatus = uiBatStatus;
+ 193   1              Info.uiPackConfig = uiPackConfig;
+ 194   1          
+ 195   1          if(bSC_EN)
+ 196   1          {
+ 197   2              REG.AFESCONF1 |= 0x08;
+ 198   2              REG.AFESCONF6 |= (E2ucAFEProtectConfig&0x0f);
+ 199   2          }
+ 200   1          
+ 201   1          if(bOV_EN)
+ 202   1          {
+ 203   2              REG.AFESCONF1 |= 0x04;
+ 204   2              REG.AFESCONF7 |= (E2ucAFEProtectConfig&0xf0);
+ 205   2              i = (U32)E2uiAFEOVvol*50/293;
+ 206   2              REG.AFESCONF8 = i>>8;
+ 207   2              REG.AFESCONF9 = i;
+ 208   2          }
+ 209   1             
+ 210   1          //Intial cellNum
+ 211   1          ucCellNum = (uiPackConfig&0x0007)+3;                                                                                                //PackConfigMap last 3 bit set cellnum 3~10
+ 212   1          if(ucCellNum==5 || ucCellNum==10)
+ 213   1          {
+ 214   2              ucCellNumOffset = 0;
+ 215   2          }
+ 216   1          else if(ucCellNum==4 || ucCellNum==9)                                                                                       //Nomal order     VC1-VCn
+ 217   1          {
+ 218   2              ucCellNumOffset = 1;
+ 219   2          }
+ 220   1          else
+ 221   1          {
+ 222   2              ucCellNumOffset = 2;
+ 223   2          }
+ 224   1      }
+ 225          
+ 226          
+ 227          /*******************************************************************************
+ 228          Function: InitIRQ() 
+ 229          Description: Init EUART,INT0,INT1,TIMER0 Interrupt  
+ 230          Input:  NULL    
+ 231          Output: NULL
+ 232          Others:
+ 233          *******************************************************************************/
+ 234          void InitIRQ(void)
+ 235          {
+ 236   1              EA = 0;
+ 237   1      
+ 238   1              IEN0 = 0x30;                                            //Enable UART0,Timer3 Interrupt
+ 239   1              IEN1 = 0x08;                                            //Enable INT4
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 5   
+
+ 240   1              IENC = 0x20;                                            //Enable INT45    ALARM
+ 241   1              IEN0 |= 0x01;                                           //INT0                    WAKEUP
+ 242   1              TCON = 0x01;                                            //Exint0£ºFalling edge trigger
+ 243   1              
+ 244   1              EXF0 = 0x40;                                            //Exint4£ºFalling edge trigger
+ 245   1              
+ 246   1              IPL0 = 0x10;
+ 247   1              IPH0 = 0x10;
+ 248   1              IPL1 = 0x00;
+ 249   1              IPH1 = 0x00;                                            //set uart priority = 3, other interrupt priority  = 0
+ 250   1              
+ 251   1              EA = 1;
+ 252   1      }
+ 253          
+ 254          
+ 255          /*******************************************************************************
+ 256          Function: InitTimer()
+ 257          Description: Init Timer3,Set Timer3 time is 25ms 
+ 258          Input:  NULL    
+ 259          Output: NULL
+ 260          Others:
+ 261          *******************************************************************************/
+ 262          void InitTimer(void)
+ 263          {
+ 264   1              BANK1_SEL;
+ 265   1              T3CON = 0x02;           //Íâ²¿32.768kHz/128kHzÎªÊ±ÖÓÔ´£¬1·ÖÆµ
+ 266   1              TL3 = 0xCD;              
+ 267   1              TH3 = 0xFC;                     //25mS
+ 268   1              TR3 = 1;                        //Æô¶¯¶¨Ê±Æ÷3
+ 269   1              BANK0_SEL;
+ 270   1      }
+ 271          
+ 272          
+ 273          /*******************************************************************************
+ 274          Function: InitGPIO()
+ 275          Description:
+ 276              P0.7[TXD],  P0.6[RXD],  P0.5[SCL],  P0.4[SDA],  P0.3[],     P0.2[],     P0.1[KLED], P0.0[BLPW], 
+ 277              P0.7ST[1],  P0.6ST[1],  P0.5ST[1],  P0.4ST[1],  P0.3ST[0]0,  P0.2ST[0],  P0.1ST[1]0,  P0.0ST[0]0,  P0 
+             -= 0xF2;
+ 278              P0.7CR[1],  P0.6CR[0],  P0.5CR[0],  P0.4CR[0],  P0.3CR[1]1,  P0.2CR[1],  P0.1CR[0]1,  P0.0CR[1]1,  P0C
+             -R = 0x8D;
+ 279              P0.7PC[1],  P0.6PC[1],  P0.5PC[0],  P0.4PC[0],  P0.3PC[0]0,  P0.2PC[0],  P0.1PC[1]0,  P0.0PC[0]0,  P0P
+             -CR = 0xC2;
+ 280          
+ 281              P1.7[],     P1.6[],     P1.5[],     P1.4[],     P1.3[],     P1.2[],     P1.1[],     P1.0[], 
+ 282              P1.7ST[0],  P1.6ST[0],  P1.5ST[0],  P1.4ST[0],  P1.3ST[0],  P1.2ST[0],  P1.1ST[0],  P1.0ST[0],  P1 = 0
+             -x00;
+ 283              P1.7CR[1],  P1.6CR[1],  P1.5CR[1],  P1.4CR[1],  P1.3CR[1],  P1.2CR[1],  P1.1CR[1],  P1.0CR[1],  P1CR =
+             - 0xFF;
+ 284              P1.7PC[0],  P1.6PC[0],  P1.5PC[0],  P1.4PC[0],  P1.3PC[0],  P1.2PC[0],  P1.1PC[0],  P1.0PC[0],  P1PCR 
+             -= 0x00;
+ 285          
+ 286              P2.7[],      P2.6[ALARM],P2.5[CTLD], P2.4[LED5], P2.3[LED4], P2.2[LED3], P2.1[LED2], P2.0[LED1], 
+ 287              P2.7ST[0]1,  P2.6ST[1],  P2.5ST[1],  P2.4ST[0],  P2.3ST[0],  P2.2ST[0],  P2.1ST[0],  P2.0ST[0],  P2 = 
+             -0x60;
+ 288              P2.7CR[1]0,  P2.6CR[0],  P2.5CR[1],  P2.4CR[1],  P2.3CR[1],  P2.2CR[1],  P2.1CR[1],  P2.0CR[1],  P2CR 
+             -= 0xBF;
+ 289              P2.7PC[0]1,  P2.6PC[1],  P2.5PC[0],  P2.4PC[0],  P2.3PC[0],  P2.2PC[0],  P2.1PC[0],  P2.0PC[0],  P2PCR
+             - = 0x40;
+ 290          
+ 291              P3.7[],     P3.6[],     P3.5[LED6]6, P3.4[XTAL1],P3.3[XTAL2],P3.2[],         P3.1[KEY],   P3.0[], 
+ 292              P3.7ST[0],  P3.6ST[0],  P3.5ST[0]1,  P3.4ST[1],  P3.3ST[1],  P3.2ST[0],  P3.1ST[1]0,  P3.0ST[0]1,  P3 
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 6   
+
+             -= 0x1A;
+ 293              P3.7CR[1],  P3.6CR[1],  P3.5CR[1]0,  P3.4CR[0],  P3.3CR[0],  P3.2CR[1],  P3.1CR[0]1,  P3.0CR[1]0,  P3C
+             -R = 0xE5;
+ 294              P3.7PC[0],  P3.6PC[0],  P3.5PC[0]1,  P3.4PC[1],  P3.3PC[1],  P3.2PC[0],  P3.1PC[1]0,  P3.0PC[0]1,  P3P
+             -CR = 0x1A;
+ 295          Input:  NULL
+ 296          Output: NULL
+ 297          Others:
+ 298          *******************************************************************************/
+ 299          void InitGPIO(void)
+ 300          {       
+ 301   1              P1 = 0x00;
+ 302   1              P1PCR = 0x00;
+ 303   1              P1CR = 0xFF;
+ 304   1              
+ 305   1              P0 = 0xF2;
+ 306   1              P0PCR = 0xC2;
+ 307   1              P0CR = 0x8D;
+ 308   1      
+ 309   1              P2 = 0x60;
+ 310   1              P2PCR = 0x40;
+ 311   1              P2CR = 0xBF;
+ 312   1      
+ 313   1              P3 = 0x02;
+ 314   1              P3PCR = 0x02;
+ 315   1              P3CR = 0xFD;
+ 316   1              
+ 317   1              IO_BLEPW = 1;
+ 318   1      }
+ 319          
+ 320          
+ 321          /*******************************************************************************
+ 322          Function: InitClk()
+ 323          Description: Set system clock = 16.6M/12 
+ 324          Input:  NULL    
+ 325          Output: NULL
+ 326          Others:
+ 327          *******************************************************************************/
+ 328          void InitClk(void)
+ 329          {
+ 330   1              CLKCON  = 0x08;                                                         //SETB HFON
+ 331   1              _nop_();
+ 332   1              _nop_();
+ 333   1              _nop_();
+ 334   1              _nop_();
+ 335   1              _nop_();
+ 336   1              _nop_();
+ 337   1              _nop_();
+ 338   1              _nop_();
+ 339   1              CLKCON |= 0x04;                                                         //SETB  FS, SYSCLK=24M
+ 340   1      }
+ 341          
+ 342          
+ 343          /*******************************************************************************
+ 344          Function: InitPWM()
+ 345          Description: InitPWM2 
+ 346          Input:  NULL    
+ 347          Output: NULL
+ 348          Others:
+ 349          *******************************************************************************/
+ 350          void InitPWM(void)
+ 351          {
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 7   
+
+ 352   1          PWM2CON = 0xb0;                                                       //ÏµÍ³Ê±ÖÓ/64
+ 353   1          PWM2PL = 375000/E2uiDSG1PWMFreq;                      //PWM2P=24000000/(64*E2uiDSG1PWMFreq);
+ 354   1              PWM2PH = (375000/E2uiDSG1PWMFreq) >> 8;
+ 355   1          PWM2DL = (U16)(PWM2PL+PWM2PH*256)*E2ucDSG1PWMRatioL/100;
+ 356   1              PWM2DH = ((U16)(PWM2PL+PWM2PH*256)*E2ucDSG1PWMRatioL/100) >> 8;
+ 357   1              bSlowDischarge = 0;
+ 358   1              bMidDischarge = 0;
+ 359   1              ucDsgingSpeed = 2;
+ 360   1              bFastDischarge = 1;
+ 361   1      }
+ 362          
+ 363          
+ 364          /*******************************************************************************
+ 365          Function:PartialInitial()  
+ 366          Description:  
+ 367          Input:  
+ 368          Output: 
+ 369          Others:
+ 370          *******************************************************************************/
+ 371          void PartialInitial(void)
+ 372          {
+ 373   1              InitGPIO();                                             //³õÊ¼»¯GPIO
+ 374   1      
+ 375   1              InitTimer();                                    //³õÊ¼»¯Timer
+ 376   1      
+ 377   1              InitUART0();                                    //³õÊ¼»¯UARTÄ£¿é
+ 378   1      
+ 379   1              InitTwi();                                              //³õÊ¼»¯TWIÄ£¿é
+ 380   1      
+ 381   1              InitSysPara();                                  //³õÊ¼»¯ÏµÍ³²ÎÊý
+ 382   1      
+ 383   1              InitVar();                                              //³õÊ¼»¯±äÁ¿
+ 384   1              
+ 385   1              InitPWM();                                              //³õÊ¼»¯PWM
+ 386   1      
+ 387   1              if(InitAFE())                                   //³õÊ¼»¯ 306
+ 388   1              {
+ 389   2              ClearAFEFlg();
+ 390   2      
+ 391   2              if(WaitADCConvert())
+ 392   2              {
+ 393   3                      BatteryInfoManage();                    //µç³ØÐÅÏ¢¹ÜÀí£º»ñÈ¡µçÑ¹¡¢µçÁ÷¡¢ÎÂ¶È
+ 394   3                              
+ 395   3                      PorOnProtect();                                 //¿ª»ú±£»¤
+ 396   3          
+ 397   3                      InitGasGauge();                                 //³õÊ¼»¯ÈÝÁ¿ÐÅÏ¢£¬RSOC
+ 398   3         
+ 399   3                  InitIRQ();                                          //³õÊ¼»¯ÖÐ¶Ï
+ 400   3              }
+ 401   2              else
+ 402   2              {
+ 403   3                      IntoPowerDown();
+ 404   3              }
+ 405   2              }
+ 406   1              else
+ 407   1              {
+ 408   2                      IntoPowerDown();
+ 409   2              }
+ 410   1              
+ 411   1              InitSealCalibrate();                    //ÅÐ¶ÏÊÇ·ñ×ö¹ýÐ£×¼È«²¿²ÎÊý
+ 412   1      
+ 413   1              if(bEnEEPRomBK)                                 //Èç¹ûÖ§³ÖÍâ²¿RTCºÍEEPROM£¬ÐèÒª³õÊ¼»¯
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 8   
+
+ 414   1              {
+ 415   2                      InitE2PRom();
+ 416   2                      InitRTC();
+ 417   2              }
+ 418   1      
+ 419   1      }
+ 420          
+ 421          
+ 422          /*******************************************************************************
+ 423          Function: AllInitial()
+ 424          Description:  
+ 425          Input:  NULL    
+ 426          Output: NULL
+ 427          Others:
+ 428          *******************************************************************************/
+ 429          void AllInitial(void)
+ 430          {
+ 431   1              InitGPIO();                                             //³õÊ¼»¯GPIO
+ 432   1      
+ 433   1              ClrRam();                                               //Çå¿ÕMCU RAM
+ 434   1              
+ 435   1              InitTimer();                                    //³õÊ¼»¯Timer
+ 436   1      
+ 437   1              InitUART0();                                    //³õÊ¼»¯UART1Ä£¿é
+ 438   1      
+ 439   1              InitTwi();                                              //³õÊ¼»¯TWIÄ£¿é
+ 440   1      
+ 441   1              InitSysPara();                                  //³õÊ¼»¯ÏµÍ³²ÎÊý
+ 442   1      
+ 443   1              InitVar();                                              //³õÊ¼»¯±äÁ¿
+ 444   1      
+ 445   1              InitPWM();                                              //³õÊ¼»¯PWM
+ 446   1      
+ 447   1              if(InitAFE())                                   //³õÊ¼»¯ 306
+ 448   1              {
+ 449   2              ClearAFEFlg();
+ 450   2      
+ 451   2              if(WaitADCConvert())
+ 452   2              {
+ 453   3                      BatteryInfoManage();                    //µç³ØÐÅÏ¢¹ÜÀí£º»ñÈ¡µçÑ¹¡¢µçÁ÷¡¢ÎÂ¶È
+ 454   3                              
+ 455   3                      PorOnProtect();                                 //¿ª»ú±£»¤
+ 456   3          
+ 457   3                      InitGasGauge();                                 //³õÊ¼»¯ÈÝÁ¿ÐÅÏ¢£¬RSOC
+ 458   3         
+ 459   3                  InitIRQ();                                          //³õÊ¼»¯ÖÐ¶Ï
+ 460   3              }
+ 461   2              else
+ 462   2              {
+ 463   3                      IntoPowerDown();
+ 464   3              }
+ 465   2              }
+ 466   1              else
+ 467   1              {
+ 468   2                      IntoPowerDown();
+ 469   2              }
+ 470   1              
+ 471   1              InitSealCalibrate();                    //ÅÐ¶ÏÊÇ·ñ×ö¹ýÐ£×¼È«²¿²ÎÊý
+ 472   1      
+ 473   1              if(bEnEEPRomBK)                                 //Èç¹ûÖ§³ÖÍâ²¿RTCºÍEEPROM£¬ÐèÒª³õÊ¼»¯
+ 474   1              {
+ 475   2                      InitE2PRom();
+C51 COMPILER V9.00   INITIAL                                                               12/10/2019 11:35:42 PAGE 9   
+
+ 476   2                      InitRTC();
+ 477   2              }
+ 478   1      
+ 479   1      }
+ 480          
+ 481          
+ 482          /*******************************************************************************
+ 483          Function: Initial()
+ 484          Description:  ALLInitial()--Initial all data; PartialInitial()--Initial part data;
+ 485          Input:  NULL
+ 486          Output: NULL
+ 487          Others:
+ 488          *******************************************************************************/
+ 489          void Initial(void)
+ 490          {
+ 491   1              FLASHCON = 0x00;
+ 492   1          if(CWORD[510/2] != 0x5AA5)  //³ÌÐò¼ì²âµÚÒ»¸ö1KÊý¾Ý×îºóÁ½¸ö×Ö½ÚÊÇ·ñÎª0x5AA5£¬Èç¹û²»ÊÇÔòÈÏÎª³ÌÐòÒì³££¬Ö±½
+             -Ó½øÈëISP
+ 493   1              {
+ 494   2              ISPProcess();
+ 495   2              }
+ 496   1      
+ 497   1              if(((RSTSTAT&0x38)!=0) || (ucResetFlag==0x12))  //POR+LVR+ResetPin+PC instruction
+ 498   1              {
+ 499   2                      RSTSTAT = 0x00;
+ 500   2                      ucResetFlag = 0;
+ 501   2                      
+ 502   2                      AllInitial();
+ 503   2              }
+ 504   1              else                    //WDT+OVL¸´Î»
+ 505   1              {
+ 506   2                      RSTSTAT = 0x00;
+ 507   2                      PartialInitial();
+ 508   2              }
+ 509   1      }
+ 510          
+ 511          
+ 512          
+ 513          
+ 514          
+ 515          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1138    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

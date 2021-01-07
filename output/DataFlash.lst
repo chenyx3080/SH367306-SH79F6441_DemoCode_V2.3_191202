@@ -1,0 +1,367 @@
+C51 COMPILER V9.00   DATAFLASH                                                             12/10/2019 11:35:45 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DATAFLASH
+OBJECT MODULE PLACED IN .\output\DataFlash.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\DataFlash.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\header) DEBUG O
+                    -BJECTEXTEND PRINT(.\output\DataFlash.lst) OBJECT(.\output\DataFlash.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/09/10
+   6          History:
+   7                  V0.0            2014/09/10               Preliminary
+   8          ********************************************************************************/
+   9          #define RAM_CHECK_DATA                  0x5A
+  10          
+  11          
+  12          unsigned char code dataflash[] =
+  13          {
+  14          /*********************************************************************************************************
+             -********/
+  15          //备份A区
+  16          /*********************************************************************************************************
+             -********/
+  17          //系统信息区开始 SubClassID=0x00                langth=48
+  18                  0x2b, 0x37,                                                     // U16 xdata PackConfigMap              _at_    SYS_PARA_MAP_ADDR; 
+  19                  0x00C,0x080,                                            // U16 xdata VOC10              _at_    SYS_PARA_MAP_ADDR+2;
+  20                  0x00D,0x048,                                            // U16 xdata VOC20              _at_    SYS_PARA_MAP_ADDR+4;
+  21                  0x00D,0x0DE,                                            // U16 xdata VOC30              _at_    SYS_PARA_MAP_ADDR+6;
+  22                  0x00E,0x074,                                            // U16 xdata VOC40              _at_    SYS_PARA_MAP_ADDR+8;
+  23                  0x00E,0x0D8,                                    // U16 xdata VOC50              _at_    SYS_PARA_MAP_ADDR+10;     
+  24                  0x00F,0x03C,                                            // U16 xdata VOC60              _at_    SYS_PARA_MAP_ADDR+12;                   
+  25                  0x00F,0x0A0,                                            // U16 xdata VOC70              _at_    SYS_PARA_MAP_ADDR+14;                           
+  26                  0x010,0x004,                                            // U16 xdata VOC80              _at_    SYS_PARA_MAP_ADDR+16;                           
+  27                  0x010,0x036,                                            // U16 xdata VOC90              _at_    SYS_PARA_MAP_ADDR+18;                           
+  28                  0x010,0x068,                                            // U16 xdata VOC100             _at_    SYS_PARA_MAP_ADDR+20;                           
+  29                  0X000,0X000,0x008,0x098,                        // U32 xdata DesignCapacity         _at_        SYS_PARA_MAP_ADDR+22;   2200mAh
+  30                  0X000,0X000,0x008,0x098,                        // U32 xdata FullChargeCapacity _at_    SYS_PARA_MAP_ADDR+26;   2200
+  31                  0X000,0X000,0x008,0x034,                        // U32 xdata CycleThreshold             _at_    SYS_PARA_MAP_ADDR+30;   2100
+  32                  0X000,0X000,                                            // U16 xdata CycleCount                 _at_    SYS_PARA_MAP_ADDR+34;
+  33                  0x00a,0x0ab,                                            // U16 xdata LearnLowTemp               _at_    SYS_PARA_MAP_ADDR+36;   2731
+  34                  0x000,0x0C8,                                            // U16 xdata NearFull                   _at_    SYS_PARA_MAP_ADDR+38;   200
+  35                  0x000,0x064,                                            // S16 xdata DfilterCur                 _at_    SYS_PARA_MAP_ADDR+40;   100
+  36                  0x014,                                                          // U8  xdata DeleyLowPower              _at_    SYS_PARA_MAP_ADDR+42;   20s
+  37                  0x001,                                                          // U8  xdata E2ucChgBKDelay             _at_    SYS_PARA_MAP_ADDR+43;   1min
+  38                  0x000,0x064,                                            // S16 xdata E2uiChgBKCur               _at_    SYS_PARA_MAP_ADDR+44;   100mA
+  39                  0x005,                                                          // U8  xdata E2ucRTCBKDelay             _at_    SYS_PARA_MAP_ADDR+46;   5s
+  40                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg1             _at_    SYS_PARA_MAP_ADDR+47;
+  41          
+  42          //用户自定义参数区开始 SubClassID=0x01  langth=50
+  43                  0x002,0x030,                                            // U16 xdata SWVersion          _at_    SYSINFO_MAP_ADDR;               V2.0    
+  44                  0x004,0x010,                                            // U16 xdata HWVersion          _at_    SYSINFO_MAP_ADDR+2;             V4.0    
+  45                  0x000,                                                          // U8  xdata ID                 _at_    SYSINFO_MAP_ADDR+4;                             
+  46                  'S','i','n','o',                                        // U8  xdata MNFName[12]        _at_    SYSINFO_MAP_ADDR+5;
+  47                  'w','e','a','l','t','h',
+  48                  0x000,0x000,                                                            
+  49          
+  50                  0x020,0x019,0x012,0x002,                        // U32 xdata MNFDate                    _at_    SYSINFO_MAP_ADDR+17;                                    
+  51                  0x000,0x000,                                            // U16 xdata SerialNum                  _at_    SYSINFO_MAP_ADDR+21;                    
+  52                  'S','H','3','6','7','3','0','6',        // U8  xdata DeviceName[12]     _at_    SYSINFO_MAP_ADDR+23;
+C51 COMPILER V9.00   DATAFLASH                                                             12/10/2019 11:35:45 PAGE 2   
+
+  53                  0x000,0x000,0x000,0x000,                                        
+  54          
+  55                  'L','I','O','N',                                        // U8  xdata DeviceChem[12]     _at_    SYSINFO_MAP_ADDR+35;
+  56                  0x000,0x000,0x000,0x000,
+  57                  0x000,0x000,0x000,0x000,                                
+  58          
+  59                  0x000,0x000,                                            // U16 xdata ChemID             _at_    SYSINFO_MAP_ADDR+47;
+  60                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg2     _at_    SYSINFO_MAP_ADDR+49;
+  61          
+  62          //充电参数区开始 SubClassID=0x02                langth=18                       
+  63                  0x010,0x09A,                                            // U16 xdata OVvol                              _at_    CHG_PARA_MAP_ADDR;              4250
+  64                  0x010,0x036,                                            // U16 xdata OVRvol             _at_    CHG_PARA_MAP_ADDR+2;    4150
+  65                  0x002,                                                          // U8  xdata DelayOV                    _at_    CHG_PARA_MAP_ADDR+4;    2
+  66                  0x002,                                                          // U8  xdata DelayOVR                   _at_    CHG_PARA_MAP_ADDR+5;    2
+  67                  0x010,0x068,                                            // U16 xdata ChgEndvol              _at_        CHG_PARA_MAP_ADDR+6;    4200    
+  68                  0x000,0x064,                                            // S16 xdata ChgEndCur          _at_    CHG_PARA_MAP_ADDR+8;    100
+  69                  0x005,                                                          // U8  xdata DelayChgEnd                _at_    CHG_PARA_MAP_ADDR+10;   5
+  70                  0x000,0x000,0x00B,0x0B8,                        // S32 xdata OCCvol                     _at_    CHG_PARA_MAP_ADDR+11;   3000
+  71                  0x002,                                                          // U8  xdata DelayOCC                   _at_    CHG_PARA_MAP_ADDR+15;   2
+  72                  0x00a,                                                          // U8  xdata DelayOCCR                  _at_    CHG_PARA_MAP_ADDR+16;   10
+  73                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg3     _at_    CHG_PARA_MAP_ADDR+17;
+  74          
+  75          //放电参数区开始 SubClassID=0x03                langth=21
+  76                  0x00A,0x08C,                                            // U16 xdata UVvol              _at_    DSG_PARA_MAP_ADDR;              2700
+  77                  0x00B,0x0B8,                                            // U16 xdata UVRvol             _at_    DSG_PARA_MAP_ADDR+2;    3000
+  78                  0x002,                                                          // U8  xdata DelayUV            _at_    DSG_PARA_MAP_ADDR+4;    2               // all the delay unit is 500mS
+  79                  0x002,                                                          // U8  xdata DelayUVR           _at_    DSG_PARA_MAP_ADDR+5;    2
+  80                  0x00B,0x054,                                            // U16 xdata DsgEndvol          _at_    DSG_PARA_MAP_ADDR+6;    2900
+  81                  0x005,                                                          // U8  xdata DelayDsgEnd        _at_    DSG_PARA_MAP_ADDR+8;    5
+  82                  0xFF,0xFF,0x0B1,0x0E0,                          // U16 xdata OCDvol                             _at_    DSG_PARA_MAP_ADDR+9;
+  83                  0x002,                                                          // U8  xdata DelayOCD                   _at_    DSG_PARA_MAP_ADDR+13;   2
+  84                  0xFF,0xFF,0x063,0x0c0,                          // S32 xdata OCD2vol                    _at_    DSG_PARA_MAP_ADDR+14;
+  85                  0x002,                                                          // U8  xdata DelayOCD2                  _at_    DSG_PARA_MAP_ADDR+18;   2
+  86                  0x004,                                                          // U8  xdata DelayLoadR                 _at_    DSG_PARA_MAP_ADDR+19;   4
+  87                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg4     _at_    DSG_PARA_MAP_ADDR+20;
+  88          
+  89          //放电PWM参数区开始 SubClassID=0x04             langth=5
+  90                  0x00F,0x0A0,                                            // U16 xdata DSG1PWMFreq                _at_    DSG_PWM_PARA_MAP_ADDR;          4000Hz
+  91                  0x01e,                                                          // U8  xdata DSG1PWMRatioL      _at_    DSG_PWM_PARA_MAP_ADDR+2;        30%
+  92                  0x046,                                                          // U8  xdata DSG1PWMRatioH      _at_    DSG_PWM_PARA_MAP_ADDR+3;        70%                             
+  93                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg5             _at_    DSG_PWM_PARA_MAP_ADDR+4;
+  94          
+  95          //充电温度保护参数开始 SubClassID=0x05  langth=11
+  96                  0x00C,0x09F,                                            // U16 xdata TempOTC                    _at_    CHG_TEMP_PARA_MAP_ADDR;         3231-2731=500
+  97                  0x00C,0x06D,                                            // U16 xdata TempOTCR                   _at_    CHG_TEMP_PARA_MAP_ADDR+2;       3181-2731=450
+  98                  0x00A,0x0AB,                                            // U16 xdata TempUTC            _at_    CHG_TEMP_PARA_MAP_ADDR+4;       2731
+  99                  0x00A,0x0DD,                                            // U16 xdata TempUTCR           _at_    CHG_TEMP_PARA_MAP_ADDR+6;       2781-2731=50
+ 100                  0x003,                                                          // U8  xdata DelayOTC                   _at_    CHG_TEMP_PARA_MAP_ADDR+8;       3
+ 101                  0x003,                                                          // U8  xdata DelayOTCR          _at_    CHG_TEMP_PARA_MAP_ADDR+9;       3
+ 102                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg6             _at_    CHG_TEMP_PARA_MAP_ADDR+10;
+ 103          
+ 104          //放电温度保护参数开始 SubClassID=0x06  langth=9
+ 105                  0x00D,0x067,                                            // U16 xdata TempOTD                    _at_    DSG_TEMP_PARA_MAP_ADDR;         3431-2731=700
+ 106                  0x00C,0x0D1,                                            // U16 xdata TempOTDR           _at_    DSG_TEMP_PARA_MAP_ADDR+2;       3281-2731=550
+ 107                  0x00A,0x047,                                            // U16 xdata TempUTD            _at_    DSG_TEMP_PARA_MAP_ADDR+4;       2631-2731=-100
+ 108                  0x00A,0x079,                                            // U16 xdata TempUTDR           _at_    DSG_TEMP_PARA_MAP_ADDR+6;       2681-2731=-50
+ 109                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg7             _at_    DSG_TEMP_PARA_MAP_ADDR+8;
+ 110          
+ 111          //平衡参数区开始 SubClassID=0x08                langth=8
+ 112                  0x010,0x054,                                            // U16 xdata BalanceVol         _at_    BAL_PARA_MAP_ADDR;              4180
+ 113                  0x000,0x014,                                            // U16 xdata BalanceVolDiff     _at_    BAL_PARA_MAP_ADDR+2;    20      
+ 114                  0x000,0x064,                                            // S16 xdata BalCurrent                 _at_    BAL_PARA_MAP_ADDR+4;    100
+C51 COMPILER V9.00   DATAFLASH                                                             12/10/2019 11:35:45 PAGE 3   
+
+ 115                  0x002,                                                          // U8  xdata BalanceDelay       _at_    BAL_PARA_MAP_ADDR+6;    2
+ 116                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg8             _at_    BAL_PARA_MAP_ADDR+7;
+ 117          
+ 118          //AFE参数区开始 SubClassID=0x0A                 langth=4
+ 119                  0x074,                                                          // U8  xdata AFEProtectConfig   _at_    AFE_PARA_MAP_ADDR;
+ 120                  0x011,0x030,                                            // U16 xdata AFEOVvol                   _at_    AFE_PARA_MAP_ADDR+2;    4400
+ 121                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg9             _at_    AFE_PARA_MAP_ADDR+3;
+ 122          
+ 123          //校准参数区开始 SubClassID=0x0B                langth=12
+ 124                  0x00A,0x022,                                            // U16 xdata VPackGain                  _at_    CALI_PARA_MAP_ADDR;             2594
+ 125                  0x0FF,0x0AE,                                            // S16 xdata CadcGain                   _at_    CALI_PARA_MAP_ADDR+2;   -82
+ 126                  0x000,0x001,                                            // S16 xdata CadcOffset                 _at_    CALI_PARA_MAP_ADDR+4;
+ 127                  0x000,0x000,                                            // S16 xdata TS1Offset                  _at_    CALI_PARA_MAP_ADDR+6;
+ 128                  0x000,0x000,                                            // S16 xdata TS2Offset                  _at_    CALI_PARA_MAP_ADDR+8;
+ 129                  0x000,                                                          // U8  xdata E2ucCalibrated             _at_    CALI_PARA_MAP_ADDR+10;
+ 130                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg10    _at_    CALI_PARA_MAP_ADDR+11;
+ 131          
+ 132          //Reserved
+ 133                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 134                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 135                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 136                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 137                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 138                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 139                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 140                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 141                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 142                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 143                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 144                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 145                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 146                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 147                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 148                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 149                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 150                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 151                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 152                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 153                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 154                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 155                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 156                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 157                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 158                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 159                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 160                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 161                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 162                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 163                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 164                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 165                  0x000,0x000,0x000,0x000,
+ 166          
+ 167                  0x05A,0x0A5,                                     // U16 xdata FlashCheck                        _at_    DataflashCheck_Map_ADDR;                
+ 168          
+ 169          
+ 170          
+ 171          /*********************************************************************************************************
+             -********/
+ 172          //备份B区
+ 173          /*********************************************************************************************************
+             -********/
+ 174          //系统信息区开始 SubClassID=0x00                langth=48
+C51 COMPILER V9.00   DATAFLASH                                                             12/10/2019 11:35:45 PAGE 4   
+
+ 175                  0x2b, 0x37,                                                     // U16 xdata PackConfigMap              _at_    SYS_PARA_MAP_ADDR; 
+ 176                  0x00C,0x080,                                            // U16 xdata VOC10              _at_    SYS_PARA_MAP_ADDR+2;
+ 177                  0x00D,0x048,                                            // U16 xdata VOC20              _at_    SYS_PARA_MAP_ADDR+4;
+ 178                  0x00D,0x0DE,                                            // U16 xdata VOC30              _at_    SYS_PARA_MAP_ADDR+6;
+ 179                  0x00E,0x074,                                            // U16 xdata VOC40              _at_    SYS_PARA_MAP_ADDR+8;
+ 180                  0x00E,0x0D8,                                    // U16 xdata VOC50              _at_    SYS_PARA_MAP_ADDR+10;     
+ 181                  0x00F,0x03C,                                            // U16 xdata VOC60              _at_    SYS_PARA_MAP_ADDR+12;                   
+ 182                  0x00F,0x0A0,                                            // U16 xdata VOC70              _at_    SYS_PARA_MAP_ADDR+14;                           
+ 183                  0x010,0x004,                                            // U16 xdata VOC80              _at_    SYS_PARA_MAP_ADDR+16;                           
+ 184                  0x010,0x036,                                            // U16 xdata VOC90              _at_    SYS_PARA_MAP_ADDR+18;                           
+ 185                  0x010,0x068,                                            // U16 xdata VOC100             _at_    SYS_PARA_MAP_ADDR+20;                           
+ 186                  0X000,0X000,0x008,0x098,                        // U32 xdata DesignCapacity         _at_        SYS_PARA_MAP_ADDR+22;   2200mAh
+ 187                  0X000,0X000,0x008,0x098,                        // U32 xdata FullChargeCapacity _at_    SYS_PARA_MAP_ADDR+26;   2200
+ 188                  0X000,0X000,0x008,0x034,                        // U32 xdata CycleThreshold             _at_    SYS_PARA_MAP_ADDR+30;   2100
+ 189                  0X000,0X000,                                            // U16 xdata CycleCount                 _at_    SYS_PARA_MAP_ADDR+34;
+ 190                  0x00a,0x0ab,                                            // U16 xdata LearnLowTemp               _at_    SYS_PARA_MAP_ADDR+36;   2731
+ 191                  0x000,0x0C8,                                            // U16 xdata NearFull                   _at_    SYS_PARA_MAP_ADDR+38;   200
+ 192                  0x000,0x064,                                            // S16 xdata DfilterCur                 _at_    SYS_PARA_MAP_ADDR+40;   100
+ 193                  0x014,                                                          // U8  xdata DeleyLowPower              _at_    SYS_PARA_MAP_ADDR+42;   20s
+ 194                  0x001,                                                          // U8  xdata E2ucChgBKDelay             _at_    SYS_PARA_MAP_ADDR+43;   1min
+ 195                  0x000,0x064,                                            // S16 xdata E2uiChgBKCur               _at_    SYS_PARA_MAP_ADDR+44;   100mA
+ 196                  0x005,                                                          // U8  xdata E2ucRTCBKDelay             _at_    SYS_PARA_MAP_ADDR+46;   5s
+ 197                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg1             _at_    SYS_PARA_MAP_ADDR+47;
+ 198          
+ 199          //用户自定义参数区开始 SubClassID=0x01  langth=50
+ 200                  0x002,0x030,                                            // U16 xdata SWVersion          _at_    SYSINFO_MAP_ADDR;               V2.0    
+ 201                  0x004,0x010,                                            // U16 xdata HWVersion          _at_    SYSINFO_MAP_ADDR+2;             V4.0    
+ 202                  0x000,                                                          // U8  xdata ID                 _at_    SYSINFO_MAP_ADDR+4;                             
+ 203                  'S','i','n','o',                                        // U8  xdata MNFName[12]        _at_    SYSINFO_MAP_ADDR+5;
+ 204                  'w','e','a','l','t','h',
+ 205                  0x000,0x000,                                                            
+ 206          
+ 207                  0x020,0x019,0x012,0x002,                        // U32 xdata MNFDate                    _at_    SYSINFO_MAP_ADDR+17;                                    
+ 208                  0x000,0x000,                                            // U16 xdata SerialNum                  _at_    SYSINFO_MAP_ADDR+21;                    
+ 209                  'S','H','3','6','7','3','0','6',        // U8  xdata DeviceName[12]     _at_    SYSINFO_MAP_ADDR+23;
+ 210                  0x000,0x000,0x000,0x000,                                        
+ 211          
+ 212                  'L','I','O','N',                                        // U8  xdata DeviceChem[12]     _at_    SYSINFO_MAP_ADDR+35;
+ 213                  0x000,0x000,0x000,0x000,
+ 214                  0x000,0x000,0x000,0x000,                                
+ 215          
+ 216                  0x000,0x000,                                            // U16 xdata ChemID             _at_    SYSINFO_MAP_ADDR+47;
+ 217                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg2     _at_    SYSINFO_MAP_ADDR+49;
+ 218          
+ 219          //充电参数区开始 SubClassID=0x02                langth=18                       
+ 220                  0x010,0x09A,                                            // U16 xdata OVvol                              _at_    CHG_PARA_MAP_ADDR;              4250
+ 221                  0x010,0x036,                                            // U16 xdata OVRvol             _at_    CHG_PARA_MAP_ADDR+2;    4150
+ 222                  0x002,                                                          // U8  xdata DelayOV                    _at_    CHG_PARA_MAP_ADDR+4;    2
+ 223                  0x002,                                                          // U8  xdata DelayOVR                   _at_    CHG_PARA_MAP_ADDR+5;    2
+ 224                  0x010,0x068,                                            // U16 xdata ChgEndvol              _at_        CHG_PARA_MAP_ADDR+6;    4200    
+ 225                  0x000,0x064,                                            // S16 xdata ChgEndCur          _at_    CHG_PARA_MAP_ADDR+8;    100
+ 226                  0x005,                                                          // U8  xdata DelayChgEnd                _at_    CHG_PARA_MAP_ADDR+10;   5
+ 227                  0x000,0x000,0x00B,0x0B8,                        // S32 xdata OCCvol                     _at_    CHG_PARA_MAP_ADDR+11;   3000
+ 228                  0x002,                                                          // U8  xdata DelayOCC                   _at_    CHG_PARA_MAP_ADDR+15;   2
+ 229                  0x00a,                                                          // U8  xdata DelayOCCR                  _at_    CHG_PARA_MAP_ADDR+16;   10
+ 230                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg3     _at_    CHG_PARA_MAP_ADDR+17;
+ 231          
+ 232          //放电参数区开始 SubClassID=0x03                langth=21
+ 233                  0x00A,0x08C,                                            // U16 xdata UVvol              _at_    DSG_PARA_MAP_ADDR;              2700
+ 234                  0x00B,0x0B8,                                            // U16 xdata UVRvol             _at_    DSG_PARA_MAP_ADDR+2;    3000
+ 235                  0x002,                                                          // U8  xdata DelayUV            _at_    DSG_PARA_MAP_ADDR+4;    2               // all the delay unit is 500mS
+ 236                  0x002,                                                          // U8  xdata DelayUVR           _at_    DSG_PARA_MAP_ADDR+5;    2
+C51 COMPILER V9.00   DATAFLASH                                                             12/10/2019 11:35:45 PAGE 5   
+
+ 237                  0x00B,0x054,                                            // U16 xdata DsgEndvol          _at_    DSG_PARA_MAP_ADDR+6;    2900
+ 238                  0x005,                                                          // U8  xdata DelayDsgEnd        _at_    DSG_PARA_MAP_ADDR+8;    5
+ 239                  0xFF,0xFF,0x0B1,0x0E0,                          // U16 xdata OCDvol                             _at_    DSG_PARA_MAP_ADDR+9;
+ 240                  0x002,                                                          // U8  xdata DelayOCD                   _at_    DSG_PARA_MAP_ADDR+13;   2
+ 241                  0xFF,0xFF,0x063,0x0c0,                          // S32 xdata OCD2vol                    _at_    DSG_PARA_MAP_ADDR+14;
+ 242                  0x002,                                                          // U8  xdata DelayOCD2                  _at_    DSG_PARA_MAP_ADDR+18;   2
+ 243                  0x004,                                                          // U8  xdata DelayLoadR                 _at_    DSG_PARA_MAP_ADDR+19;   4
+ 244                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg4     _at_    DSG_PARA_MAP_ADDR+20;
+ 245          
+ 246          //放电PWM参数区开始 SubClassID=0x04             langth=5
+ 247                  0x00F,0x0A0,                                            // U16 xdata DSG1PWMFreq                _at_    DSG_PWM_PARA_MAP_ADDR;          4000Hz
+ 248                  0x01e,                                                          // U8  xdata DSG1PWMRatioL      _at_    DSG_PWM_PARA_MAP_ADDR+2;        30%
+ 249                  0x046,                                                          // U8  xdata DSG1PWMRatioH      _at_    DSG_PWM_PARA_MAP_ADDR+3;        70%                             
+ 250                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg5             _at_    DSG_PWM_PARA_MAP_ADDR+4;
+ 251          
+ 252          //充电温度保护参数开始 SubClassID=0x05  langth=11
+ 253                  0x00C,0x09F,                                            // U16 xdata TempOTC                    _at_    CHG_TEMP_PARA_MAP_ADDR;         3231-2731=500
+ 254                  0x00C,0x06D,                                            // U16 xdata TempOTCR                   _at_    CHG_TEMP_PARA_MAP_ADDR+2;       3181-2731=450
+ 255                  0x00A,0x0AB,                                            // U16 xdata TempUTC            _at_    CHG_TEMP_PARA_MAP_ADDR+4;       2731
+ 256                  0x00A,0x0DD,                                            // U16 xdata TempUTCR           _at_    CHG_TEMP_PARA_MAP_ADDR+6;       2781-2731=50
+ 257                  0x003,                                                          // U8  xdata DelayOTC                   _at_    CHG_TEMP_PARA_MAP_ADDR+8;       3
+ 258                  0x003,                                                          // U8  xdata DelayOTCR          _at_    CHG_TEMP_PARA_MAP_ADDR+9;       3
+ 259                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg6             _at_    CHG_TEMP_PARA_MAP_ADDR+10;
+ 260          
+ 261          //放电温度保护参数开始 SubClassID=0x06  langth=9
+ 262                  0x00D,0x067,                                            // U16 xdata TempOTD                    _at_    DSG_TEMP_PARA_MAP_ADDR;         3431-2731=700
+ 263                  0x00C,0x0D1,                                            // U16 xdata TempOTDR           _at_    DSG_TEMP_PARA_MAP_ADDR+2;       3281-2731=550
+ 264                  0x00A,0x047,                                            // U16 xdata TempUTD            _at_    DSG_TEMP_PARA_MAP_ADDR+4;       2631-2731=-100
+ 265                  0x00A,0x079,                                            // U16 xdata TempUTDR           _at_    DSG_TEMP_PARA_MAP_ADDR+6;       2681-2731=-50
+ 266                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg7             _at_    DSG_TEMP_PARA_MAP_ADDR+8;
+ 267          
+ 268          //平衡参数区开始 SubClassID=0x08                langth=8
+ 269                  0x010,0x054,                                            // U16 xdata BalanceVol         _at_    BAL_PARA_MAP_ADDR;              4180
+ 270                  0x000,0x014,                                            // U16 xdata BalanceVolDiff     _at_    BAL_PARA_MAP_ADDR+2;    20      
+ 271                  0x000,0x064,                                            // S16 xdata BalCurrent                 _at_    BAL_PARA_MAP_ADDR+4;    100
+ 272                  0x002,                                                          // U8  xdata BalanceDelay       _at_    BAL_PARA_MAP_ADDR+6;    2
+ 273                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg8             _at_    BAL_PARA_MAP_ADDR+7;
+ 274          
+ 275          //AFE参数区开始 SubClassID=0x0A                 langth=4
+ 276                  0x074,                                                          // U8  xdata AFEProtectConfig   _at_    AFE_PARA_MAP_ADDR;
+ 277                  0x011,0x030,                                            // U16 xdata AFEOVvol                   _at_    AFE_PARA_MAP_ADDR+2;    4400
+ 278                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg9             _at_    AFE_PARA_MAP_ADDR+3;
+ 279          
+ 280          //校准参数区开始 SubClassID=0x0B                langth=12
+ 281                  0x00A,0x022,                                            // U16 xdata VPackGain                  _at_    CALI_PARA_MAP_ADDR;             2594
+ 282                  0x0FF,0x0AE,                                            // S16 xdata CadcGain                   _at_    CALI_PARA_MAP_ADDR+2;   -82
+ 283                  0x000,0x001,                                            // S16 xdata CadcOffset                 _at_    CALI_PARA_MAP_ADDR+4;
+ 284                  0x000,0x000,                                            // S16 xdata TS1Offset                  _at_    CALI_PARA_MAP_ADDR+6;
+ 285                  0x000,0x000,                                            // S16 xdata TS2Offset                  _at_    CALI_PARA_MAP_ADDR+8;
+ 286                  0x000,                                                          // U8  xdata E2ucCalibrated             _at_    CALI_PARA_MAP_ADDR+10;
+ 287                  RAM_CHECK_DATA,                                         // U8  xdata ucRamCheckFlg10    _at_    CALI_PARA_MAP_ADDR+11;
+ 288          
+ 289          //Reserved
+ 290                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 291                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 292                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 293                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 294                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 295                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 296                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 297                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 298                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+C51 COMPILER V9.00   DATAFLASH                                                             12/10/2019 11:35:45 PAGE 6   
+
+ 299                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 300                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 301                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 302                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 303                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 304                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 305                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 306                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 307                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 308                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 309                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 310                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 311                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 312                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 313                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 314                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 315                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 316                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 317                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 318                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 319                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 320                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 321                  0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
+ 322                  0x000,0x000,0x000,0x000,
+ 323          
+ 324                  0x05A,0x0A5,                                     // U16 xdata FlashCheck                        _at_    DataflashCheck_Map_ADDR;                
+ 325          
+ 326          
+ 327          };
+ 328          
+ 329          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   1024    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

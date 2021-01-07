@@ -1,0 +1,1 @@
+"code\Event.c" OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\Event.lst) OBJECT(.\output\Event.obj)

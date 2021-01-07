@@ -1,0 +1,368 @@
+C51 COMPILER V9.00   E2PROM                                                                03/22/2019 14:58:06 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE E2PROM
+OBJECT MODULE PLACED IN .\output\E2PRom.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\E2PRom.c OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTE
+                    -ND PRINT(.\output\E2PRom.lst) OBJECT(.\output\E2PRom.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         andyliu
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/08/28               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "twi.h"
+  11          
+  12          #define EEPROM_RTC              0xff00
+  13          
+  14          extern bit TwiWrite(U8 SlaveID, U16 WrAddr, U8 Length, U8 xdata *WrBuf);
+  15          extern bit TwiRead(U8 SlaveID, U16 RdAddr, U8 Length, U8 xdata *RdBuf);
+  16          extern bit RTCReadTime(void);
+  17          extern void InitRTC(void);
+  18          extern void MemoryCopy(U8 xdata *source, U8 xdata *target, U8 length);
+  19          extern void MemorySet(U8 xdata *pt, U8 SetVal, U8 length);
+  20          extern void Delay1ms(U8 delaycnt);
+  21          
+  22          
+  23          
+  24          void E2PRomWrite(U16 WrAddr, U8 Length, U8 xdata *WrBuf)
+  25          {
+  26   1              if(!TwiWrite(E2PROM_ID, WrAddr, Length, WrBuf))
+  27   1              {
+  28   2                      TwiWrite(E2PROM_ID, WrAddr, Length, WrBuf);
+  29   2              }
+  30   1      }
+  31          
+  32          
+  33          
+  34          bit E2PRomRead(U16 RdAddr, U8 Length, U8 xdata *RdBuf)
+  35          {
+  36   1          BOOL result = 1;
+  37   1      
+  38   1              if(!TwiRead(E2PROM_ID, RdAddr, Length, RdBuf))
+  39   1              {
+  40   2                      result = TwiRead(E2PROM_ID, RdAddr, Length, RdBuf);
+  41   2              }
+  42   1      
+  43   1          return result;
+  44   1      }
+  45          
+  46          
+  47          /*******************************************************************************
+  48          Function: 
+  49          Description:  
+  50          Input:          
+  51          Output: 
+  52          Others:
+  53          *******************************************************************************/
+  54          void InitE2PRom(void)                                           //讀引導區域中的地址并初始化
+C51 COMPILER V9.00   E2PROM                                                                03/22/2019 14:58:06 PAGE 2   
+
+  55          {
+  56   1              U8 xdata RdBuf[8];
+  57   1      
+  58   1              E2PRomRead(E2PROM_BOOT_ADDR, 8, RdBuf);
+  59   1              
+  60   1              if((RdBuf[0]+RdBuf[1]) == RdBuf[3])
+  61   1              {
+  62   2                      uiE2PDataAddr = ((U16)RdBuf[0]<<8) + RdBuf[1];
+  63   2              }
+  64   1              else if((RdBuf[4]+RdBuf[5]) == RdBuf[7])
+  65   1              {
+  66   2                      uiE2PDataAddr = ((U16)RdBuf[4]<<8) + RdBuf[5];
+  67   2              }
+  68   1              else
+  69   1              {
+  70   2                      uiE2PDataAddr = 0;
+  71   2              }
+  72   1      }
+  73          
+  74          
+  75          /*******************************************************************************
+  76          Function: 
+  77          Description:  
+  78          Input:          
+  79          Output: 
+  80          Others:
+  81          *******************************************************************************/
+  82          void E2PRomBKRTC(void)                                  //將RTC的值備份到EEPROM
+  83          {
+  84   1              U8 xdata WrBuf[9];
+  85   1              U8 i, checksum=0;
+  86   1              
+  87   1              RTCReadTime();
+  88   1              MemoryCopy((U8 xdata *)&RTC, WrBuf, 7);
+  89   1              for(i=0; i<7; i++)
+  90   1              {
+  91   2                      checksum += WrBuf[i];
+  92   2              }
+  93   1              WrBuf[7] = checksum;
+  94   1              WrBuf[8] = 0x5A;
+  95   1              
+  96   1              E2PRomWrite(E2PROM_RTC_ADDR, 9, WrBuf);
+  97   1      }
+  98          
+  99          
+ 100          void E2PRomBKBoot(void)
+ 101          {
+ 102   1              U8 xdata WrBuf[8];
+ 103   1      
+ 104   1              WrBuf[0] = (uiE2PDataAddr>>8);
+ 105   1              WrBuf[1] = uiE2PDataAddr;
+ 106   1              WrBuf[3] = WrBuf[0]+WrBuf[1];                           //Calculate checksum
+ 107   1      
+ 108   1              WrBuf[4] = WrBuf[0];
+ 109   1              WrBuf[5] = WrBuf[1];
+ 110   1              WrBuf[7] = WrBuf[3];
+ 111   1              
+ 112   1              E2PRomWrite(E2PROM_BOOT_ADDR, 8, WrBuf);
+ 113   1      } 
+ 114          
+ 115          
+ 116          /*******************************************************************************
+C51 COMPILER V9.00   E2PROM                                                                03/22/2019 14:58:06 PAGE 3   
+
+ 117          Function: 
+ 118          Description:  
+ 119          Input:          
+ 120          Output: 
+ 121          Others:
+ 122          *******************************************************************************/
+ 123          void E2PRomBKData(U8 BKType)
+ 124          {
+ 125   1              U8 xdata WrBuf[32];
+ 126   1      
+ 127   1          if(BKType == 0x10)                  //Charge shart
+ 128   1          {
+ 129   2              MemoryCopy((U8 xdata *)&ucRTCBuf, WrBuf, 7);
+ 130   2          }
+ 131   1          else
+ 132   1          {
+ 133   2              RTCReadTime();
+ 134   2              MemoryCopy((U8 xdata *)&RTC, WrBuf, 7);
+ 135   2          }
+ 136   1              
+ 137   1              WrBuf[7] = (Info.PackStatus>>8);
+ 138   1              WrBuf[8] = Info.PackStatus;
+ 139   1              WrBuf[9] = (Info.BatStatus>>8);
+ 140   1              WrBuf[10] = Info.BatStatus;
+ 141   1              WrBuf[11] = (Info.E2ulFCC>>24);
+ 142   1              WrBuf[12] = (Info.E2ulFCC>>16);
+ 143   1              WrBuf[13] = (Info.E2ulFCC>>8);
+ 144   1              WrBuf[14] = Info.E2ulFCC;
+ 145   1              WrBuf[15] = (Info.RC>>24);
+ 146   1              WrBuf[16] = (Info.RC>>16);
+ 147   1              WrBuf[17] = (Info.RC>>8);
+ 148   1              WrBuf[18] = Info.RC;
+ 149   1              WrBuf[19] = (Info.Voltage>>8);
+ 150   1              WrBuf[20] = Info.Voltage;
+ 151   1              WrBuf[21] = (Info.CurCadc>>24);
+ 152   1              WrBuf[22] = (Info.CurCadc>>16);
+ 153   1              WrBuf[23] = (Info.CurCadc>>8);
+ 154   1              WrBuf[24] = Info.CurCadc;
+ 155   1              WrBuf[25] = (Info.Temperature1>>8);
+ 156   1              WrBuf[26] = Info.Temperature1;
+ 157   1              WrBuf[27] = (Info.E2uiCycleCount>>8);
+ 158   1              WrBuf[28] = Info.E2uiCycleCount;
+ 159   1              WrBuf[29] = BKType;
+ 160   1              WrBuf[31] = 0x5A;
+ 161   1      
+ 162   1              E2PRomWrite(uiE2PDataAddr, 32, WrBuf);
+ 163   1              
+ 164   1              uiE2PDataAddr += 32;
+ 165   1              if(uiE2PDataAddr >= E2PROM_BOOT_ADDR)
+ 166   1              {
+ 167   2                      uiE2PDataAddr = 0;
+ 168   2              }
+ 169   1      
+ 170   1              E2PRomBKBoot();
+ 171   1      }
+ 172          
+ 173          
+ 174          void E2PRomErase(void)
+ 175          {
+ 176   1              U16 i;
+ 177   1              U8 xdata WrBuf[8];
+ 178   1              
+C51 COMPILER V9.00   E2PROM                                                                03/22/2019 14:58:06 PAGE 4   
+
+ 179   1              MemorySet(WrBuf, 0, 8);                         //clr Info.VCell[]
+ 180   1              
+ 181   1              for(i=0; i<(E2PROM_SIZE/32-1); i++)
+ 182   1              {
+ 183   2                      E2PRomWrite(i*32+31, 1, WrBuf);                                 //標誌清零，對應[31]=5A
+ 184   2              }
+ 185   1              
+ 186   1              E2PRomWrite(E2PROM_BOOT_ADDR, 8, WrBuf);
+ 187   1              uiE2PDataAddr = 0;
+ 188   1      }
+ 189          
+ 190          
+ 191          void UartRdE2PRom(void)
+ 192          {
+ 193   1              U8 i, checksum=0;
+ 194   1              
+ 195   1              U16 RdAddr;
+ 196   1              
+ 197   1      //      RdAddr = (ucUartBuf[UART_CMD_NO]-CMD_RD_EEPROM)*32768+(U16)ucUartBuf[UART_OFFSET]*128;          ????????
+ 198   1              E2PRomRead(RdAddr, ucUartBuf[UART_LENGTH]-1, &ucUartBuf[4]);
+ 199   1              
+ 200   1              for(i=0; i<ucUartBuf[UART_LENGTH]-1; i++)
+ 201   1              {
+ 202   2                      checksum += ucUartBuf[4+i];
+ 203   2              }
+ 204   1              ucUartBuf[4+i] = checksum;
+ 205   1              
+ 206   1              UART_SEND_DATA;                 //Start Send Data; Set UART REG
+ 207   1      }
+ 208          
+ 209          
+ 210          
+ 211          void UartRdRTC(void)
+ 212          {
+ 213   1              U8 i, checksum=0;
+ 214   1      
+ 215   1              RTCReadTime();
+ 216   1              MemoryCopy((U8 xdata *)&RTC, &ucUartBuf[4], 7);
+ 217   1              
+ 218   1              for(i=0; i<7; i++)
+ 219   1              {
+ 220   2                      checksum += ucUartBuf[4+i];
+ 221   2              }
+ 222   1              ucUartBuf[4+i] = checksum;
+ 223   1              
+ 224   1              UART_SEND_DATA;                 //Start Send Data; Set UART REG
+ 225   1      }
+ 226          
+ 227          
+ 228          /*******************************************************************************
+ 229          Function: 
+ 230          Description:  
+ 231          Input:          
+ 232          Output: 
+ 233          Others:
+ 234          *******************************************************************************/
+ 235          void E2PRomBKProcess(void)
+ 236          {
+ 237   1              U8 BKType;
+ 238   1      
+ 239   1              if(bE2PErase)
+ 240   1              {
+C51 COMPILER V9.00   E2PROM                                                                03/22/2019 14:58:06 PAGE 5   
+
+ 241   2                      bE2PErase = 0;
+ 242   2                      E2PRomErase();
+ 243   2              }
+ 244   1              
+ 245   1              if(bE2PRdData)
+ 246   1              {
+ 247   2                      bE2PRdData = 0;
+ 248   2                      UartRdE2PRom();
+ 249   2              }
+ 250   1              
+ 251   1              if(bRTCRdTime)
+ 252   1              {
+ 253   2                      bRTCRdTime = 0;
+ 254   2                      UartRdRTC();
+ 255   2              }
+ 256   1              
+ 257   1              if(bE2PBKRtc)
+ 258   1              {
+ 259   2                      bE2PBKRtc = 0;
+ 260   2                      E2PRomBKRTC();                                                          //每隔1個小時會把RTC寫入EEPROM
+ 261   2              }
+ 262   1              
+ 263   1              if(bE2PBKChgStart)
+ 264   1              {
+ 265   2                      bE2PBKChgStart = 0;
+ 266   2                      BKType = 0x10;
+ 267   2                      E2PRomBKData(BKType);
+ 268   2              }
+ 269   1              
+ 270   1              if(bE2PBKChgStop)
+ 271   1              {
+ 272   2                      bE2PBKChgStop = 0;
+ 273   2                      BKType = 0x01;
+ 274   2                      E2PRomBKData(BKType);
+ 275   2              }
+ 276   1              
+ 277   1              if(bE2PBKDsgEnd)
+ 278   1              {
+ 279   2                      bE2PBKDsgEnd = 0;
+ 280   2                      BKType = 0x02;
+ 281   2                      E2PRomBKData(BKType);
+ 282   2              }
+ 283   1      }
+ 284          
+ 285          
+ 286          
+ 287          void E2PRomBKCheck(void)
+ 288          {
+ 289   1              if(++ucRTCBKTime1 >= E2ucRTCBKDelay)
+ 290   1              {
+ 291   2                      ucRTCBKTime1 = 0;
+ 292   2                      RTCReadTime();                                                          //讀RTC的值到RAM 
+ 293   2              }
+ 294   1              
+ 295   1              if(++uiRTCBKTime2 >= 3600)                                      //1h
+ 296   1              {
+ 297   2                      uiRTCBKTime2 = 0;
+ 298   2                      bE2PProcessFlg = 1;
+ 299   2                      bE2PBKRtc = 1;
+ 300   2              }
+ 301   1      
+ 302   1              if(!bCHGING)                                                                                    //放電狀態置標誌位，為了置位有效充電
+C51 COMPILER V9.00   E2PROM                                                                03/22/2019 14:58:06 PAGE 6   
+
+ 303   1              {
+ 304   2                      bDsgToChgFlg = 1;
+ 305   2                      if(bChgToDsgFlg)
+ 306   2                      {
+ 307   3                              bChgToDsgFlg = 0;
+ 308   3                              bE2PProcessFlg = 1;
+ 309   3                              bE2PBKChgStop = 1;                                              //充電結束，將值寫入EEPROM
+ 310   3                      }
+ 311   2              }
+ 312   1      
+ 313   1              if((bDsgToChgFlg && Info.CurCadc>=E2uiChgBKCur))
+ 314   1              {
+ 315   2                      if(!uiCHGValidTime)
+ 316   2              {
+ 317   3                      RTCReadTime();
+ 318   3                      MemoryCopy((U8 xdata *)&RTC, ucRTCBuf, 7);                        
+ 319   3              }
+ 320   2      
+ 321   2              if(++uiCHGValidTime > ((U16)E2ucChgBKDelay*60))
+ 322   2                      {
+ 323   3                              uiCHGValidTime = 0;
+ 324   3                              bChgToDsgFlg = 1;
+ 325   3                              bDsgToChgFlg = 0;
+ 326   3                              bE2PProcessFlg = 1;
+ 327   3                              bE2PBKChgStart = 1;                                     //充電開始，將值寫入EEPROM
+ 328   3                      }
+ 329   2              }
+ 330   1              else
+ 331   1              {
+ 332   2                      uiCHGValidTime = 0;
+ 333   2              }
+ 334   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1336    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      65
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      19
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

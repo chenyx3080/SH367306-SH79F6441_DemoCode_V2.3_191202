@@ -1,0 +1,127 @@
+/********************************************************************************
+Copyright (C), Sinowealth Electronic. Ltd.
+Author: 	Sino
+Version: 	V0.0
+Date: 		2014/05/30
+History:
+	V0.0		2014/05/30		 Preliminary
+********************************************************************************/
+#include "system.h"
+
+/*******************************************************************************
+Function: 
+Description:  INT45
+Input:	 	
+Output: 
+Others:
+*******************************************************************************/
+void InterruptINT4(void) interrupt 10
+{
+	_push_(INSCON);
+    BANK0_SEL;
+
+	if(IF45)		                   //306 ALARM
+	{
+		IF45 = 0;
+		if(bPDFlg||bIdleFlg)
+		{
+			InitClk();
+			bWakeupFlg = 1;
+		}
+		bAlarmFlg = 1;
+	}
+
+	_pop_(INSCON);
+}
+
+
+/*******************************************************************************
+Function: 
+Description:  INT0
+Input:	 	
+Output: 
+Others:
+*******************************************************************************/
+void InterruptINT0(void) interrupt 0
+{
+	_push_(INSCON);
+    BANK0_SEL;
+
+	if(bPDFlg || bIdleFlg)			   //WakeUp
+	{
+		InitClk();	 	
+
+		bWakeupFlg = 1;	
+	}
+
+	_pop_(INSCON);
+}
+
+
+/*******************************************************************************
+Function: InterruptTimer3()
+Description:  20ms
+Input:	 	
+Output: 
+Others:
+*******************************************************************************/
+void InterruptTimer3(void)	interrupt	5
+{
+	_push_(INSCON);
+	
+	BANK1_SEL;
+	TL3 = 0xCD;		 
+	TH3 = 0xFC;			//25mS
+ 	TF3 = 0;
+	BANK0_SEL;
+
+    bTimer25msFlg = 1;
+
+    if(bLEDChgFlg)						//charging flicker led 25*20=500mS
+    {
+        if(++ucLedFlickCnt >= 20)
+        {
+            ucLedFlickCnt = 0;
+			LED_CHARGE ^= 1;
+        }
+    }
+	else
+	{
+		LED_CHARGE = 0;
+	}
+
+    if(bBLEOPEN)						// BLE flicker 25*10=250mS
+    {
+        if(++ucBLEFlickCnt >= 10)
+        {
+            ucBLEFlickCnt = 0;
+			LED1 ^= 1;
+        }
+    }
+	else
+	{
+		LED1 = 0;
+	}	
+	
+	if(++ucTimer3Cnt >= 40)					  //1S
+	{
+		ucTimer3Cnt = 0;
+		bTimer1sFlg = 1;
+	}
+
+	if(++ucUartTimeoutCnt >= 8)			//If not Uart communication within 200ms, then clear 
+	{
+		REN = 1;	
+		ucUartBufPT = 0;
+	}
+	
+	ScanKey();						  //Scankey not keyprocess ,in scankey will judge if have press key and set keyflag
+
+	_pop_(INSCON);
+}
+
+
+//void InterruptINT3(void) interrupt 11	 
+//{
+//	IE3 = 0;			   
+//}

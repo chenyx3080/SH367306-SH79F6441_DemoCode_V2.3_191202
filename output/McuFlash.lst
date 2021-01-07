@@ -1,0 +1,424 @@
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MCUFLASH
+OBJECT MODULE PLACED IN .\output\McuFlash.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\McuFlash.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OB
+                    -JECTEXTEND PRINT(.\output\McuFlash.lst) OBJECT(.\output\McuFlash.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         
+   4          Version:        V0.0
+   5          Date:           2016/05/18
+   6          History:
+   7                          V0.0            2016/05/18               Preliminary
+   8          ********************************************************************************/
+   9          #include "System.h"
+  10          
+  11          
+  12          /*******************************************************************************
+  13          Function:void Flash_wirte_one_byte(U16 xdata ADRS,U8 xdata WDAT)
+  14          Description:  
+  15          Input:          
+  16          Output: 
+  17          Others:
+  18          *******************************************************************************/
+  19          void Flash_wirte_one_byte(U16 xdata ADRS,U8 xdata WDAT)
+  20          {
+  21   1          EA = 0;
+  22   1          FLASHCON = 1;
+  23   1      
+  24   1          XPAGE = ADRS / 256;
+  25   1          IB_OFFSET = ADRS % 256;
+  26   1      
+  27   1          IB_DATA = WDAT;
+  28   1      
+  29   1          IB_CON1 = 0x6E;     
+  30   1          IB_CON2 = 0x05;
+  31   1          IB_CON3 = 0x0A;
+  32   1          IB_CON4 = 0x09;
+  33   1          IB_CON5 = 0x06;
+  34   1          _nop_();            
+  35   1          _nop_();
+  36   1          _nop_(); 
+  37   1          _nop_();
+  38   1              _nop_();
+  39   1              
+  40   1          FLASHCON = 0;       
+  41   1          EA = 1;
+  42   1      }
+  43          
+  44          
+  45          /*******************************************************************************
+  46          Function:BlackE2CheckUp(U16 Saddr, U16 num) 
+  47          Description:  
+  48          Input:          
+  49          Output: 
+  50          Others:
+  51          *******************************************************************************/
+  52          BOOL BlackE2CheckUp(U16 Saddr)
+  53          {
+  54   1          U16 i;
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 2   
+
+  55   1          
+  56   1          FLASHCON = 0x01;
+  57   1          RSTSTAT = 0x00;
+  58   1          
+  59   1          for(i=0; i<512; i++)
+  60   1          {
+  61   2                      RSTSTAT = 0x00;
+  62   2              if(CBYTE[Saddr+i] != 0x00)
+  63   2              {
+  64   3                  return 0;
+  65   3              }
+  66   2          }
+  67   1          
+  68   1          return 1;
+  69   1      }
+  70          
+  71          
+  72          /*******************************************************************************
+  73          Function:WriteE2Sector(U16 Saddr, U16 num) 
+  74          Description:  
+  75          Input:          
+  76          Output: 
+  77          Others:
+  78          *******************************************************************************/
+  79          BOOL WriteE2Sector(U16 Saddr)
+  80          {
+  81   1          U16 i;
+  82   1          U8 xdata *data ptr = 0;
+  83   1          BOOL returnflg = 0;
+  84   1          
+  85   1          RSTSTAT = 0x00;
+  86   1      
+  87   1          for(i=0; i<512; i++)
+  88   1          {
+  89   2                      RSTSTAT = 0x00;
+  90   2              IB_OFFSET = Saddr+i;
+  91   2              XPAGE = (Saddr+i)>>8;
+  92   2              IB_DATA = *(ptr+i);
+  93   2              
+  94   2              if(ucUpDataLimitTime == 0)
+  95   2              {
+  96   3                  IB_CON1 = 0x6E;
+  97   3                  if(!EA)
+  98   3                  {
+  99   4                      IB_CON2 = 0x05;
+ 100   4                      if(FLASHCON)
+ 101   4                      {
+ 102   5                          IB_CON3 = 0x0A;
+ 103   5                          if(ucFlashWrValid == 0x55)
+ 104   5                          {
+ 105   6                              IB_CON4 = 0x09;
+ 106   6                              if(XPAGE == ((Saddr+i)>>8))
+ 107   6                              {
+ 108   7                                  IB_CON5 = 0x06;
+ 109   7                                  _nop_();
+ 110   7                                  _nop_();
+ 111   7                                  _nop_();
+ 112   7                                  _nop_();
+ 113   7                                  _nop_();
+ 114   7                                  
+ 115   7                                  returnflg = 1;
+ 116   7                              }
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 3   
+
+ 117   6                              else break;
+ 118   6                          }
+ 119   5                          else break;
+ 120   5                      }
+ 121   4                      else break;
+ 122   4                  }
+ 123   3                  else break;
+ 124   3              }
+ 125   2              else break;
+ 126   2          }
+ 127   1          return returnflg;
+ 128   1      }
+ 129          
+ 130          
+ 131          /*******************************************************************************
+ 132          Function:WriteMcuFlash(U16 Saddr) 
+ 133          Description:  
+ 134          Input:          
+ 135          Output: 
+ 136          Others:
+ 137          *******************************************************************************/
+ 138          BOOL WriteMcuFlash(U16 Saddr)   //write dataflash from xdata map
+ 139          {                                                                                                       //Saddr:dataflash addr  ,num:length of data, dataaddr: addr of map in xdata
+ 140   1          BOOL returnflg = 0;
+ 141   1      
+ 142   1          RSTSTAT = 0x00;
+ 143   1              EA = 0;
+ 144   1              FLASHCON = 0x01;
+ 145   1              XPAGE = Saddr >> 8;
+ 146   1          
+ 147   1          if(ucUpDataLimitTime == 0)
+ 148   1          {
+ 149   2              IB_CON1 = 0xE6;
+ 150   2              if(!EA)
+ 151   2              {
+ 152   3                  IB_CON2 = 0x05;
+ 153   3                  if(FLASHCON)
+ 154   3                  {
+ 155   4                      IB_CON3 = 0x0A;
+ 156   4                      if(ucFlashWrValid == 0x55)
+ 157   4                      {
+ 158   5                          IB_CON4 = 0x09;
+ 159   5                          if(XPAGE == (Saddr >> 8))
+ 160   5                          {
+ 161   6                              IB_CON5 = 0x06;
+ 162   6                              _nop_();
+ 163   6                              _nop_();
+ 164   6                              _nop_();
+ 165   6                              _nop_();
+ 166   6                              _nop_();
+ 167   6      
+ 168   6                              if(BlackE2CheckUp(Saddr))                   
+ 169   6                              {
+ 170   7                                  E2uiCheckFlag = 0x5AA5;
+ 171   7                                  
+ 172   7                                  if(WriteE2Sector(Saddr))                    
+ 173   7                                  {
+ 174   8                                      if(E2DataCheckUp(Saddr))              
+ 175   8                                      {
+ 176   9                                          returnflg = 1;
+ 177   9                                      }
+ 178   8                                  }
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 4   
+
+ 179   7                              }
+ 180   6                          }
+ 181   5                      }
+ 182   4                  }
+ 183   3              }
+ 184   2          }
+ 185   1      
+ 186   1          IB_CON1 = 0;
+ 187   1          IB_CON2 = 0;
+ 188   1          IB_CON3 = 0;
+ 189   1          IB_CON4 = 0;
+ 190   1          IB_CON5 = 0;
+ 191   1          
+ 192   1          FLASHCON = 0x00;
+ 193   1          XPAGE = 0x00;
+ 194   1          EA = 1;
+ 195   1          
+ 196   1          return returnflg;
+ 197   1      }
+ 198          
+ 199          
+ 200          /*******************************************************************************
+ 201          Function:E2DataCheckUp() 
+ 202          Description:  
+ 203          Input:          
+ 204          Output: 
+ 205          Others:
+ 206          *******************************************************************************/
+ 207          BOOL E2DataCheckUp(U16 Saddr)
+ 208          {
+ 209   1          U8 xdata *data ptr = 0;
+ 210   1          U16 i;
+ 211   1          
+ 212   1          FLASHCON = 0x01;
+ 213   1          RSTSTAT = 0x00;
+ 214   1          
+ 215   1          for(i=0; i<512; i++)
+ 216   1          {
+ 217   2                      RSTSTAT = 0x00;
+ 218   2              if(CBYTE[Saddr+i] != *(ptr+i))
+ 219   2              {
+ 220   3                  return 0;
+ 221   3              }
+ 222   2          }
+ 223   1          return 1;
+ 224   1      }
+ 225          
+ 226          
+ 227          /*******************************************************************************
+ 228          Function:Dataflash_Check() 
+ 229          Description:  
+ 230          Input:          
+ 231          Output: 
+ 232          Others:
+ 233          *******************************************************************************/
+ 234          //bit Dataflash_Check(U16 Flashaddr, U16 num, U8 xdata *dataaddr)
+ 235          //{
+ 236          //      U8  temp;
+ 237          //      U16 i;
+ 238          //      BOOL result=0;
+ 239          //      FLASHCON = 0x01;
+ 240          //
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 5   
+
+ 241          //      for(i=0; i<num; i++)
+ 242          //      {
+ 243          //              temp = CBYTE[Flashaddr+i];
+ 244          //              if(temp!=*(dataaddr+i))
+ 245          //              {
+ 246          //                      result=0;
+ 247          //                      goto loop;
+ 248          //              }
+ 249          //      }
+ 250          //      result=1;
+ 251          //loop:
+ 252          //      
+ 253          //      FLASHCON = 0x00;
+ 254          //      return result;
+ 255          //
+ 256          //}
+ 257          
+ 258          
+ 259          /*******************************************************************************
+ 260          Function:FlashProcess() 
+ 261          Description:  
+ 262          Input:          
+ 263          Output: 
+ 264          Others:
+ 265          *******************************************************************************/
+ 266          void FlashProcess(void)
+ 267          {
+ 268   1              BOOL E2S0WRFailFlg=0, E2S1WRFailFlg=0;
+ 269   1          ucFlashWrValid = 0x55;
+ 270   1      
+ 271   1              if(ucCellNum > 5)
+ 272   1              {
+ 273   2                      uiVoltageMin = 10000;
+ 274   2              }
+ 275   1              else
+ 276   1              {
+ 277   2                      uiVoltageMin = 5000;
+ 278   2              }
+ 279   1              
+ 280   1          if((Info.ulVoltage >= uiVoltageMin)&&(E2uiCheckFlag == 0x5AA5))                  //10V
+ 281   1          {
+ 282   2              if(!WriteMcuFlash(DATAFLASH_ADDR))
+ 283   2              {
+ 284   3                  if(!WriteMcuFlash(DATAFLASH_ADDR))
+ 285   3                  {
+ 286   4                      E2S0WRFailFlg = 1;
+ 287   4                      E2uiCheckFlag = 0xFFFF;
+ 288   4                      Flash_wirte_one_byte(DATAFLASH_ADDR+510,0xFF);
+ 289   4                      Flash_wirte_one_byte(DATAFLASH_ADDR+511,0xFF);                          
+ 290   4                  }
+ 291   3                  else if(!WriteMcuFlash(DATAFLASH_ADDR2))
+ 292   3                  {
+ 293   4                      if(!WriteMcuFlash(DATAFLASH_ADDR2))
+ 294   4                      {
+ 295   5                          E2S1WRFailFlg = 1;
+ 296   5                          E2uiCheckFlag = 0xFFFF;
+ 297   5                          Flash_wirte_one_byte(DATAFLASH_ADDR2+510,0xFF);
+ 298   5                          Flash_wirte_one_byte(DATAFLASH_ADDR2+511,0xFF);
+ 299   5                      }       
+ 300   4                  }                   
+ 301   3              }
+ 302   2      
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 6   
+
+ 303   2              else if(!WriteMcuFlash(DATAFLASH_ADDR2))
+ 304   2              {
+ 305   3                  if(!WriteMcuFlash(DATAFLASH_ADDR2))
+ 306   3                  {
+ 307   4                      E2S1WRFailFlg = 1;
+ 308   4                      E2uiCheckFlag = 0xFFFF;
+ 309   4                      Flash_wirte_one_byte(DATAFLASH_ADDR2+510,0xFF);
+ 310   4                      Flash_wirte_one_byte(DATAFLASH_ADDR2+511,0xFF);                         
+ 311   4                  }   
+ 312   3              }
+ 313   2          }
+ 314   1          else
+ 315   1          {
+ 316   2              E2S0WRFailFlg = 1;
+ 317   2              E2S1WRFailFlg = 1;
+ 318   2          }
+ 319   1      
+ 320   1          ucFlashWrValid = 0x00;
+ 321   1      
+ 322   1              if(bUartNeedAckFlg)             
+ 323   1          {
+ 324   2              bUartNeedAckFlg = 0;
+ 325   2              
+ 326   2              if(E2S0WRFailFlg & E2S1WRFailFlg)
+ 327   2              {
+ 328   3                  UART_SEND_NACK;
+ 329   3              }
+ 330   2              else
+ 331   2              {
+ 332   3                  UART_SEND_ACK;      
+ 333   3              }       
+ 334   2          }
+ 335   1      }
+ 336          
+ 337          
+ 338          /*******************************************************************************
+ 339          Function: ReadMcuFlash(U16 SourceAddr, U16 DestAddr, U8 Length)
+ 340          Description:  
+ 341          Input:  
+ 342          Output: 
+ 343          Others:
+ 344          *******************************************************************************/
+ 345          BOOL ReadMcuFlash(U16 SourceAddr, U8 xdata *DestAddr, U16 Length)
+ 346          {
+ 347   1              U16 i;
+ 348   1          BOOL result = 0;
+ 349   1          U8 xdata *data DestAddr1 = DestAddr;
+ 350   1      
+ 351   1              EA = 0;
+ 352   1              FLASHCON = 0x01;
+ 353   1          
+ 354   1          if(CWORD[(SourceAddr+510)/2] == 0x5AA5)
+ 355   1          {
+ 356   2              for(i=0; i<=Length; i++)
+ 357   2              {
+ 358   3                              RSTSTAT = 0x00;
+ 359   3                  *DestAddr1 = CBYTE[SourceAddr+i];
+ 360   3                  DestAddr1++;
+ 361   3              }
+ 362   2              result = 1;
+ 363   2          }
+ 364   1      
+C51 COMPILER V9.00   MCUFLASH                                                              12/09/2019 17:56:07 PAGE 7   
+
+ 365   1              FLASHCON = 0x00;
+ 366   1          return result;
+ 367   1      }
+ 368          
+ 369          
+ 370          /*******************************************************************************
+ 371          Function: WriteFlashCheck(void)
+ 372          Description:  
+ 373          Input:  
+ 374          Output: 
+ 375          Others:
+ 376          *******************************************************************************/
+ 377          void WriteFlashCheck(void)
+ 378          {
+ 379   1              if(bWriteFlashFlg)
+ 380   1              {
+ 381   2                      if(++ucWriteFlashCnt >= 2)
+ 382   2                      {
+ 383   3                              ucWriteFlashCnt = 0;
+ 384   3                              bWriteFlashFlg = 0;
+ 385   3                              bUpdataFlashFlg = 1;    
+ 386   3                      }
+ 387   2              }
+ 388   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    838    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       5
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

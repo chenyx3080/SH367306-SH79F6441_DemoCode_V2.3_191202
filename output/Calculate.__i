@@ -1,0 +1,1 @@
+"code\Calculate.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\Calculate.lst) OBJECT(.\output\Calculate.obj)

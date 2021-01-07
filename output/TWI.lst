@@ -1,0 +1,349 @@
+C51 COMPILER V9.00   TWI                                                                   03/22/2019 14:58:06 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE TWI
+OBJECT MODULE PLACED IN .\output\TWI.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\TWI.c OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND 
+                    -PRINT(.\output\TWI.lst) OBJECT(.\output\TWI.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         andyliu
+   4          Version:        V0.0
+   5          Date:           2019/03/13
+   6          History:
+   7                  V0.0            2019/03/13               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "twi.h"
+  11          
+  12          U8 code CRC8Table[]=
+  13          {                                                       //120424-1                      CRC Table
+  14          0x00,0x07,0x0E,0x09,0x1C,0x1B,0x12,0x15,0x38,0x3F,0x36,0x31,0x24,0x23,0x2A,0x2D,
+  15          0x70,0x77,0x7E,0x79,0x6C,0x6B,0x62,0x65,0x48,0x4F,0x46,0x41,0x54,0x53,0x5A,0x5D,
+  16          0xE0,0xE7,0xEE,0xE9,0xFC,0xFB,0xF2,0xF5,0xD8,0xDF,0xD6,0xD1,0xC4,0xC3,0xCA,0xCD,
+  17          0x90,0x97,0x9E,0x99,0x8C,0x8B,0x82,0x85,0xA8,0xAF,0xA6,0xA1,0xB4,0xB3,0xBA,0xBD,
+  18          0xC7,0xC0,0xC9,0xCE,0xDB,0xDC,0xD5,0xD2,0xFF,0xF8,0xF1,0xF6,0xE3,0xE4,0xED,0xEA,
+  19          0xB7,0xB0,0xB9,0xBE,0xAB,0xAC,0xA5,0xA2,0x8F,0x88,0x81,0x86,0x93,0x94,0x9D,0x9A,
+  20          0x27,0x20,0x29,0x2E,0x3B,0x3C,0x35,0x32,0x1F,0x18,0x11,0x16,0x03,0x04,0x0D,0x0A,
+  21          0x57,0x50,0x59,0x5E,0x4B,0x4C,0x45,0x42,0x6F,0x68,0x61,0x66,0x73,0x74,0x7D,0x7A,
+  22          0x89,0x8E,0x87,0x80,0x95,0x92,0x9B,0x9C,0xB1,0xB6,0xBF,0xB8,0xAD,0xAA,0xA3,0xA4,
+  23          0xF9,0xFE,0xF7,0xF0,0xE5,0xE2,0xEB,0xEC,0xC1,0xC6,0xCF,0xC8,0xDD,0xDA,0xD3,0xD4,
+  24          0x69,0x6E,0x67,0x60,0x75,0x72,0x7B,0x7C,0x51,0x56,0x5F,0x58,0x4D,0x4A,0x43,0x44,
+  25          0x19,0x1E,0x17,0x10,0x05,0x02,0x0B,0x0C,0x21,0x26,0x2F,0x28,0x3D,0x3A,0x33,0x34,
+  26          0x4E,0x49,0x40,0x47,0x52,0x55,0x5C,0x5B,0x76,0x71,0x78,0x7F,0x6A,0x6D,0x64,0x63,
+  27          0x3E,0x39,0x30,0x37,0x22,0x25,0x2C,0x2B,0x06,0x01,0x08,0x0F,0x1A,0x1D,0x14,0x13,
+  28          0xAE,0xA9,0xA0,0xA7,0xB2,0xB5,0xBC,0xBB,0x96,0x91,0x98,0x9F,0x8A,0x8D,0x84,0x83,
+  29          0xDE,0xD9,0xD0,0xD7,0xC2,0xC5,0xCC,0xCB,0xE6,0xE1,0xE8,0xEF,0xFA,0xFD,0xF4,0xF3
+  30          };
+  31          
+  32          
+  33          /*******************************************************************************
+  34          Function: InitTwi()
+  35          Description: Init TWI Module  
+  36          Input:  NULL    
+  37          Output: NULL
+  38          Others:
+  39          *******************************************************************************/
+  40          void InitTwi(void)
+  41          {
+  42   1              TWICR = 0x32;           //默认配置：SCL--P0.5；SDA--P0.4
+  43   1              TWITOUT = 0x02;         //外部有上拉电阻，故芯片内部上拉不用使能
+  44   1              TWIBR = 0x02;           //配置发送波特率，禁止总线超时判断，f=fsys/(16+2*CR*TWIBR)=24MHz/(16+2*64*2)=90KHz
+  45   1              TWISTA = 0x00;          //64分频
+  46   1              TWICON = 0x40;          //ENTWI ，禁止高电平超时
+  47   1              TWTFREE = 0xff;         //最大超时配置
+  48   1      }
+  49          
+  50          
+  51          /*******************************************************************************
+  52          Function:
+  53          TWICheckStatus()
+  54          Input: 
+C51 COMPILER V9.00   TWI                                                                   03/22/2019 14:58:06 PAGE 2   
+
+  55          Output:
+  56          ********************************************************************************/
+  57          bit TWICheckStatus(U8 Status)
+  58          {
+  59   1              BOOL result = 1;
+  60   1      
+  61   1              while((TWICON&0x08)==0){}               //等待TWI通讯结束
+  62   1              if((TWISTA&0xf8) != Status)
+  63   1              {
+  64   2                      result = 0;                     //Error
+  65   2              }
+  66   1              
+  67   1              return result;
+  68   1      }
+  69          
+  70          
+  71          /*******************************************************************************
+  72          Function: CRC8cal()
+  73          Description:
+  74          Input: 
+  75          Output: 
+  76          ********************************************************************************/
+  77          U8 CRC8cal(U8 *p, U8 counter)                      //look-up table calculte CRC 
+  78          {    
+  79   1          U8 crc8 = 0;    
+  80   1          
+  81   1              for( ; counter > 0; counter--)
+  82   1              {    
+  83   2                      crc8 = CRC8Table[crc8^*p];    
+  84   2                  p++;    
+  85   2          }    
+  86   1          return(crc8);    
+  87   1      }   
+  88          
+  89          
+  90          
+  91          
+  92          /*******************************************************************************
+  93          Function: TwiWrite()
+  94          Description:  write one byte
+  95          Input: SlaveID--Slave Address
+  96                    RegAddr--register addr
+  97                    RegData--register data 
+  98          Output: CY:1--OK
+  99                            0--Error
+ 100          ********************************************************************************/
+ 101          bit TwiWrite(U8 SlaveID, U16 WrAddr, U8 Length, U8 xdata *WrBuf)
+ 102          {
+ 103   1              U8 i;
+ 104   1          U8 TempBuf[3], CrcVal;
+ 105   1              BOOL result = 1;
+ 106   1              
+ 107   1          TempBuf[0] = SlaveID;
+ 108   1          TempBuf[1] = (U8)WrAddr;
+ 109   1          TempBuf[2] = *WrBuf;
+ 110   1          CrcVal = CRC8cal(TempBuf, 3);
+ 111   1      
+ 112   1              if(Length > 0)
+ 113   1              {
+ 114   2                      HTimeoutChk();
+ 115   2                      TWICON = 0x60;                                  //Start
+ 116   2                      if(!TWICheckStatus(0x08))
+C51 COMPILER V9.00   TWI                                                                   03/22/2019 14:58:06 PAGE 3   
+
+ 117   2                      {
+ 118   3                              result = 0;
+ 119   3                              goto WrErr;
+ 120   3                      }
+ 121   2                      
+ 122   2                      TWIDAT = SlaveID;                               //Slave地址
+ 123   2                      TWICON = 0x40;
+ 124   2                      if(!TWICheckStatus(0x18))
+ 125   2                      {
+ 126   3                              result = 0;
+ 127   3                              goto WrErr;
+ 128   3                      }
+ 129   2                      
+ 130   2                      if(SlaveID == E2PROM_ID)
+ 131   2                      {
+ 132   3                              TWIDAT = (U8)(WrAddr>>8);       //写寄存器高字节地址-仅针对外挂EEPROM
+ 133   3                              TWICON = 0x40;
+ 134   3                              if(!TWICheckStatus(0x28))
+ 135   3                              {
+ 136   4                                      result = 0;
+ 137   4                                      goto WrErr;
+ 138   4                              }
+ 139   3                      }
+ 140   2      
+ 141   2                      TWIDAT = (U8)WrAddr;                    //写寄存器地址
+ 142   2                      TWICON = 0x40;
+ 143   2                      if(!TWICheckStatus(0x28))
+ 144   2                      {
+ 145   3                              result = 0;
+ 146   3                              goto WrErr;
+ 147   3                      }
+ 148   2                      
+ 149   2                      if(SlaveID == IC_TWI_ID)                //如果是写AFE寄存器，则固定写一个字节+CRC
+ 150   2                      {
+ 151   3                              TWIDAT = *WrBuf;                        //Write Data
+ 152   3                              TWICON = 0x40;
+ 153   3                              if(!TWICheckStatus(0x28))
+ 154   3                              {
+ 155   4                                      result = 0;
+ 156   4                                      goto WrErr;
+ 157   4                              }
+ 158   3                              
+ 159   3                              TWIDAT = CrcVal;                        //Write CRC
+ 160   3                              TWICON = 0x40;
+ 161   3                              if(!TWICheckStatus(0x28))
+ 162   3                              {
+ 163   4                                      result = 0;
+ 164   4                                      goto WrErr;
+ 165   4                              }
+ 166   3                      }
+ 167   2                      else                                                    //写EEPROM和RTC
+ 168   2                      {
+ 169   3                              for(i=0; i<Length; i++)
+ 170   3                              {
+ 171   4                                      TWIDAT = *WrBuf;
+ 172   4                                      TWICON = 0x40;
+ 173   4                                      if(!TWICheckStatus(0x28))
+ 174   4                                      {
+ 175   5                                              result = 0;
+ 176   5                                              goto WrErr;
+ 177   5                                      }
+ 178   4                                      WrBuf++;
+C51 COMPILER V9.00   TWI                                                                   03/22/2019 14:58:06 PAGE 4   
+
+ 179   4                              }
+ 180   3                      }
+ 181   2      WrErr:
+ 182   2                      TWICON = 0x50;
+ 183   2              }
+ 184   1              
+ 185   1              return result;
+ 186   1      }
+ 187          
+ 188          /*******************************************************************************
+ 189          Function: TwiRead()
+ 190          Description:read rtc register
+ 191          Input:   RdAddr--register addr
+ 192                      Lenth   --read data length
+ 193                      RdBuf   --data buffer
+ 194          Output: 
+ 195          Others:
+ 196          ********************************************************************************/
+ 197          bit TwiRead(U8 SlaveID, U16 RdAddr, U8 Length, U8 xdata *RdBuf)
+ 198          {
+ 199   1              BOOL result=1;
+ 200   1              U8 i;
+ 201   1          U8 xdata TempBuf[46];
+ 202   1          U8 RdCrc=0;
+ 203   1      
+ 204   1          TempBuf[0] = SlaveID;
+ 205   1          TempBuf[1] = (U8)RdAddr;
+ 206   1          TempBuf[2] = Length;
+ 207   1          TempBuf[3] = SlaveID | 0x01;
+ 208   1              
+ 209   1              if(Length > 0)
+ 210   1              {
+ 211   2                      HTimeoutChk();
+ 212   2                      TWICON = 0x60;                          //Start
+ 213   2                      if(!TWICheckStatus(0x08))
+ 214   2                      {
+ 215   3                              result = 0;
+ 216   3                              goto RdErr;
+ 217   3                      }
+ 218   2                      
+ 219   2                      TWIDAT = SlaveID;                       //Slave地址
+ 220   2                      TWICON = 0x40;
+ 221   2                      if(!TWICheckStatus(0x18))
+ 222   2                      {
+ 223   3                              result = 0;
+ 224   3                              goto RdErr;
+ 225   3                      }
+ 226   2      
+ 227   2                      if(SlaveID == E2PROM_ID)
+ 228   2                      {
+ 229   3                              TWIDAT = (U8)(RdAddr>>8);//读寄存器高字节地址-仅针对外挂EEPROM
+ 230   3                              TWICON = 0x40;
+ 231   3                              if(!TWICheckStatus(0x28))
+ 232   3                              {
+ 233   4                                      result = 0;
+ 234   4                                      goto RdErr;
+ 235   4                              }
+ 236   3                      }
+ 237   2                      
+ 238   2                      TWIDAT = (U8)RdAddr;            //发送寄存器地址
+ 239   2                      TWICON = 0x40;
+ 240   2                      if(!TWICheckStatus(0x28))
+C51 COMPILER V9.00   TWI                                                                   03/22/2019 14:58:06 PAGE 5   
+
+ 241   2                      {
+ 242   3                              result = 0;
+ 243   3                              goto RdErr;
+ 244   3                      }
+ 245   2                      
+ 246   2                      if(SlaveID == IC_TWI_ID)
+ 247   2                      {
+ 248   3                              TWIDAT = Length;                //发送读取数据长度，只有SH367309 IC需要发送长度
+ 249   3                              TWICON = 0x40;
+ 250   3                              if(!TWICheckStatus(0x28))
+ 251   3                              {
+ 252   4                                      result = 0;
+ 253   4                                      goto RdErr;
+ 254   4                              }
+ 255   3                      }
+ 256   2                      
+ 257   2                      TWICON = 0x60;                          //RStart
+ 258   2                      if(!TWICheckStatus(0x10))
+ 259   2                      {
+ 260   3                              result = 0;
+ 261   3                              goto RdErr;
+ 262   3                      }
+ 263   2      
+ 264   2                      TWIDAT = SlaveID|0x01;          //Slave Address and Read
+ 265   2                      TWICON = 0x40;
+ 266   2                      if(!TWICheckStatus(0x40))
+ 267   2                      {
+ 268   3                              result = 0;
+ 269   3                              goto RdErr;
+ 270   3                      }
+ 271   2      
+ 272   2                      for(i=0; i<Length; i++)
+ 273   2                      {
+ 274   3                              if((i==Length-1) && (SlaveID!=IC_TWI_ID))
+ 275   3                              {
+ 276   4                                      TWICON = 0x40;                                  //No ACK
+ 277   4                                      TWICheckStatus(0x58);
+ 278   4                                      TempBuf[4+i] = TWIDAT;
+ 279   4                              }
+ 280   3                              else
+ 281   3                              {
+ 282   4                                      TWICON = 0x44;                                  //ACK
+ 283   4                                      TWICheckStatus(0x50);
+ 284   4                                      TempBuf[4+i] = TWIDAT;
+ 285   4                              }
+ 286   3                      }
+ 287   2                      
+ 288   2                      if(SlaveID == IC_TWI_ID)
+ 289   2                      {
+ 290   3                              TWICON = 0x40;                                          //No ACK
+ 291   3                              TWICheckStatus(0x58);
+ 292   3                              RdCrc = TWIDAT;
+ 293   3                              if(RdCrc ==  CRC8cal(TempBuf, 4+Length))
+ 294   3                              {
+ 295   4                                      goto CopyData;
+ 296   4                              }
+ 297   3                              else
+ 298   3                              {
+ 299   4                                      result = 0;
+ 300   4                                      goto RdErr;
+ 301   4                              }
+ 302   3                      }
+C51 COMPILER V9.00   TWI                                                                   03/22/2019 14:58:06 PAGE 6   
+
+ 303   2      CopyData:
+ 304   2                      for(i=0; i<Length; i++)
+ 305   2                      {
+ 306   3                              *RdBuf = TempBuf[4+i];
+ 307   3                              RdBuf++;
+ 308   3                      }
+ 309   2      RdErr:
+ 310   2                      TWICON = 0x50;                                  //TWI Stop
+ 311   2                      while((TWICON&0x10)!=0){}
+ 312   2              }
+ 313   1              
+ 314   1              return result;
+ 315   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    612    ----
+   CONSTANT SIZE    =    256    ----
+   XDATA SIZE       =   ----      46
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       3
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,1 @@
+"code\AFE_MTP.c" OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\AFE_MTP.lst) OBJECT(.\output\AFE_MTP.obj)

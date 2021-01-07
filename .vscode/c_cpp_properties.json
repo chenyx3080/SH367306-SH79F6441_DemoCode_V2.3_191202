@@ -1,0 +1,69 @@
+{
+    "configurations": [
+        {
+            "name": "MCUCore",
+            "includePath": [
+                "c:\\Users\\62657\\Desktop\\SH367306+SH79F6441_DemoCode_V2.3_191202\\header",
+                "c:\\Users\\62657\\Desktop\\SH367306+SH79F6441_DemoCode_V2.3_191202\\code"
+            ],
+            "defines": [
+                "__C51__",
+                "__VSCODE_C51__",
+                "reentrant=",
+                "compact=",
+                "small=",
+                "large=",
+                "data=",
+                "idata=",
+                "pdata=",
+                "bdata=",
+                "xdata=",
+                "code=",
+                "bit=char",
+                "sbit=char",
+                "sfr=char",
+                "sfr16=int",
+                "sfr32=int",
+                "interrupt=",
+                "using=",
+                "_at_=",
+                "_priority_=",
+                "_task_="
+            ],
+            "intelliSenseMode": "${default}"
+        },
+        {
+            "name": "Eeprom",
+            "includePath": [
+                "c:\\Users\\62657\\Desktop\\SH367306+SH79F6441_DemoCode_V2.3_191202\\header",
+                "c:\\Users\\62657\\Desktop\\SH367306+SH79F6441_DemoCode_V2.3_191202\\code"
+            ],
+            "defines": [
+                "__C51__",
+                "__VSCODE_C51__",
+                "reentrant=",
+                "compact=",
+                "small=",
+                "large=",
+                "data=",
+                "idata=",
+                "pdata=",
+                "bdata=",
+                "xdata=",
+                "code=",
+                "bit=char",
+                "sbit=char",
+                "sfr=char",
+                "sfr16=int",
+                "sfr32=int",
+                "interrupt=",
+                "using=",
+                "_at_=",
+                "_priority_=",
+                "_task_="
+            ],
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}

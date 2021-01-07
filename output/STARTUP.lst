@@ -1,0 +1,66 @@
+A51 MACRO ASSEMBLER  STARTUP                                                              12/09/2019 17:46:59 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN .\output\STARTUP.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE code\STARTUP.A51 NOMOD51 SET(LARGE) DEBUG PRINT(.\output\STARTUP.lst) O
+                      BJECT(.\output\STARTUP.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     $nomod51 
+                       2     NAME    ?C_STARTUP
+                       3     
+                       4     EXTRN CODE (?C_START)
+                       5     PUBLIC  ?C_STARTUP
+                       6     
+  00B2                 7     CLKCON       EQU                0B2H
+                       8             
+                       9     
+                      10     EXTRN   IDATA   (STACK)
+                      11     
+----                  12                     CSEG    AT      0
+0000 020000   F       13     ?C_STARTUP:     LJMP    STARTUP1
+                      14     
+                      15     
+                      16     
+                      17     ?C_C51STARTUP           SEGMENT CODE
+----                  18                                                                     RSEG                    ?C_
+                             C51STARTUP
+0000                  19     STARTUP1:
+0000 758100   F       20                     MOV     SP, #STACK-1
+0003 75B208           21                                     MOV             CLKCON, #08H    ;SETB HFON
+0006 00               22                                     NOP
+0007 00               23                                     NOP
+0008 00               24                                     NOP
+0009 00               25                                     NOP
+000A 00               26                                     NOP
+000B 00               27                                     NOP
+000C 00               28                                     NOP
+000D 00               29                                     NOP
+000E 43B204           30                                     ORL             CLKCON, #04H            ;SETB FS, SYSCLK=24
+                             M
+0011 020000   F       31                                     LJMP    ?C_START
+                      32     
+                      33                     END
+A51 MACRO ASSEMBLER  STARTUP                                                              12/09/2019 17:46:59 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+?C_C51STARTUP. . .  C SEG    0014H       REL=UNIT
+?C_START . . . . .  C ADDR   -----       EXT
+?C_STARTUP . . . .  C ADDR   0000H   A   
+CLKCON . . . . . .  N NUMB   00B2H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK. . . . . . .  I ADDR   -----       EXT
+STARTUP1 . . . . .  C ADDR   0000H   R   SEG=?C_C51STARTUP
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

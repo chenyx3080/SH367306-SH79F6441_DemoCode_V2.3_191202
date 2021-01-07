@@ -1,0 +1,381 @@
+C51 COMPILER V9.00   MEMORY                                                                12/09/2019 17:56:05 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MEMORY
+OBJECT MODULE PLACED IN .\output\Memory.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Memory.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJE
+                    -CTEXTEND PRINT(.\output\Memory.lst) OBJECT(.\output\Memory.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          
+  11          
+  12          U8 code JumpISP[5]      ={0x5A,0xA5,0x02,0xF4,0x00};        //ISP关键字定义
+  13          
+  14          //*****************************BIT MEMORY START***************************//
+  15          U16 bdata uiPackConfig; 
+  16          sbit bCellNum1          =       uiPackConfig^8;
+  17          sbit bCellNum2          =       uiPackConfig^9;
+  18          sbit bCellNum3          =       uiPackConfig^10;        
+  19          sbit bLEDNum0           =       uiPackConfig^11;                //00110111
+  20          sbit bLEDNum1           =       uiPackConfig^12;
+  21          sbit bTempNum           =       uiPackConfig^13;
+  22          sbit bCHGEnd            =       uiPackConfig^14;
+  23          sbit bDSGEnd            =       uiPackConfig^15;
+  24          
+  25          sbit bSC_EN                     =       uiPackConfig^0;                 //00101011
+  26          sbit bOV_EN                     =       uiPackConfig^1;                  
+  27          sbit bOCRC_EN           =       uiPackConfig^2;                 //auto reset or nor when OCC
+  28          sbit bBAL_EN            =       uiPackConfig^3;
+  29          sbit bPF_EN                     =       uiPackConfig^4;                 //disable
+  30          sbit bCTO_EN            =       uiPackConfig^5;                 //cell on
+  31          sbit bOCPM                      =       uiPackConfig^6;                 //disable
+  32          sbit bEnEEPRomBK        =       uiPackConfig^7;
+  33          
+  34          U16 bdata uiPackStatus;                         
+  35          sbit bCHGMOS            =       uiPackStatus^8;                  
+  36          sbit bDSGMOS            =       uiPackStatus^9;                 
+  37          sbit bCHGING            =       uiPackStatus^10;
+  38          sbit bDSGING            =       uiPackStatus^11;
+  39          sbit bSlowDischarge     =       uiPackStatus^12;
+  40          sbit bMidDischarge      =       uiPackStatus^13;
+  41          sbit bFastDischarge     =       uiPackStatus^14;
+  42          
+  43          sbit bFC                =       uiPackStatus^0;                  
+  44          sbit bFD                =       uiPackStatus^1;
+  45          sbit bVDQ               =       uiPackStatus^2;
+  46          sbit bCAL                       =       uiPackStatus^7;
+  47          
+  48          U16 bdata uiBatStatus;                          
+  49          sbit bHV                        =       uiBatStatus^8;
+  50          sbit bUV                        =       uiBatStatus^9;
+  51          sbit bOCC                       =       uiBatStatus^10;
+  52          sbit bOCD                       =       uiBatStatus^11;
+  53          
+  54          sbit bOTC                       =       uiBatStatus^0;
+C51 COMPILER V9.00   MEMORY                                                                12/09/2019 17:56:05 PAGE 2   
+
+  55          sbit bOTD                       =       uiBatStatus^1;
+  56          sbit bUTC                       =       uiBatStatus^2;
+  57          sbit bUTD                       =       uiBatStatus^3;
+  58          sbit bAFE_OV            =       uiBatStatus^4;
+  59          sbit bAFE_SC            =       uiBatStatus^5;
+  60          sbit bCTO                       =       uiBatStatus^6; 
+  61          
+  62          BOOL bTimer1sFlg;
+  63          BOOL bTimer25msFlg;
+  64          BOOL bDataFlashFail;    
+  65          BOOL bWriteFlashFlg;
+  66          BOOL bUpdataFlashFlg;
+  67          BOOL bKeyFlg;
+  68          BOOL bCADCFlg;                                          //CADC转码完成标志
+  69          BOOL bVADCFlg;
+  70          BOOL bISPFlg;                                           //ISP升级标志，进入ISP程序
+  71          BOOL bPCSleepFlg;                                       //PC通知系统进入SLEEP标志
+  72          BOOL bUartSndAckFlg;                            //UART已经发送ACK给主机
+  73          BOOL bCalibrationFlg;                           //上位机发送校准命令后置位该标志
+  74          BOOL bAlarmFlg;                                         //AFE的ALARM发生标志
+  75          BOOL bLEDOpen;                                          //LED显示标志
+  76          BOOL bLEDChgFlg;
+  77          BOOL bBLEOPEN;
+  78          BOOL bE2RTCON;
+  79          U8 data Timer3cnt;
+  80          
+  81          BOOL bE2PProcessFlg;                            //EEPROM处理标志
+  82          BOOL bIdleFlg;                                          //系统进入IDLE标志
+  83          
+  84          BOOL bDsgToChgFlg;                                      //放电转换为充电，需要备份数据
+  85          BOOL bChgToDsgFlg;                                      //充电转换为放电，需要备份数据
+  86          BOOL bE2PBKDsgEnd;                                      //放电结束标志，需要备份信息到外挂EEPROM
+  87          BOOL bE2PBKDsgEndValid;
+  88          BOOL bE2PBKChgStop;                                     //充电结束标志，需要备份信息到外挂EEPROM
+  89          BOOL bE2PBKChgStart;                            //充电开始标志，需要备份信息到外挂EEPROM
+  90          BOOL bE2PBKRtc;                                         //RTC定时备份标志，需要备份信息到外挂EEPROM
+  91          BOOL bE2PErase;                                         //擦除外挂EEPROM标志
+  92          BOOL bE2PRdData;                                        //读取外挂EEPROM标志
+  93          BOOL bRTCRdTime;                                        //读取RTC时间标志
+  94          
+  95          //*****************************DATA MEMORY START***************************//
+  96          U8 idata STACK[0x100-STACK_ADDR]        _at_    STACK_ADDR;             //堆栈
+  97          
+  98          U8      data    ucCellNum;
+  99          U16     data    uiCellVmax;
+ 100          U16     data    uiCellVmin;
+ 101          U16     data    uiVoltageMin;
+ 102          U16     xdata   uiVadcVmax;                             //ADC采集最大值
+ 103          U16     xdata   uiVadcVmin;                             //ADC采集最小值
+ 104          U8      xdata   ucBalanceTimeCnt;
+ 105          U16     xdata   uiBalanceChannel;
+ 106          U8      xdata   AFESCONF2Bk;
+ 107          
+ 108          
+ 109          //Check Load and Charger
+ 110          BOOL bChkLoadFlg;
+ 111          BOOL bChkChgerFlg;
+ 112          BOOL bChkChgerRFlg;
+ 113          BOOL bLoadConectFlg;
+ 114          BOOL bChgerConectFlg;
+ 115          BOOL bUVBkFlg;
+ 116          U8  xdata   ucLoadRCnt;
+C51 COMPILER V9.00   MEMORY                                                                12/09/2019 17:56:05 PAGE 3   
+
+ 117          U8  xdata   ucChgerRCnt;
+ 118          U8  xdata   ucChgerCnt;
+ 119          U8  xdata   ucLedChgCnt;
+ 120          U8  xdata   ucLedFlickCnt;
+ 121          U8  xdata   ucBLEFlickCnt;
+ 122          
+ 123          //ProtectCnt
+ 124          U8      xdata   ucOVcnt                 _at_    ProtectCnt;
+ 125          U8      xdata   ucOVRcnt                _at_    ProtectCnt+1;
+ 126          U8      xdata   ucUVcnt                 _at_    ProtectCnt+2;
+ 127          U8      xdata   ucUVRcnt                _at_    ProtectCnt+3;
+ 128          U8      xdata   ucChgEndcnt             _at_    ProtectCnt+4;
+ 129          U8      xdata   ucChgEndRcnt    _at_    ProtectCnt+5;
+ 130          U8      xdata   ucDsgEndcnt             _at_    ProtectCnt+6;
+ 131          U8      xdata   ucDsgEndRcnt    _at_    ProtectCnt+7;
+ 132          U8      xdata   ucOTCcnt                _at_    ProtectCnt+8;
+ 133          U8      xdata   ucOTCRcnt               _at_    ProtectCnt+9;
+ 134          U8      xdata   ucUTCcnt                _at_    ProtectCnt+10;
+ 135          U8      xdata   ucUTCRcnt           _at_        ProtectCnt+11;
+ 136          U8      xdata   ucOTDcnt                _at_    ProtectCnt+12;
+ 137          U8      xdata   ucOTDRcnt               _at_    ProtectCnt+13;
+ 138          U8      xdata   ucUTDcnt                _at_    ProtectCnt+14;
+ 139          U8      xdata   ucUTDRcnt               _at_    ProtectCnt+15;
+ 140          
+ 141          //Flash 
+ 142          U8      xdata   ucFlashWrValid;
+ 143          U8      xdata   ucWriteFlashCnt;
+ 144          
+ 145          //UART
+ 146          BOOL            bUartReadFlg;
+ 147          BOOL            bUartWriteFlg;
+ 148          BOOL            bUartNeedAckFlg;             //UART Need to send ACK flag
+ 149          U8      xdata   ucSubClassID;
+ 150          
+ 151          //System low power
+ 152          BOOL            bIdleFlg;
+ 153          BOOL            bPDFlg;
+ 154          BOOL            bWakeupFlg;
+ 155          U8      xdata   ucIdleTimerCnt;
+ 156          U8      xdata   ucPDTimerCnt;
+ 157          U8  xdata       ucResetFlag;
+ 158          U8  data        ucTimer3Cnt;
+ 159          
+ 160          //Calibrate
+ 161          U16     xdata   ulExtVPack;
+ 162          U8  xdata       ucExtcaliSwitch1;
+ 163          U8  xdata       ucExtcaliFlag;                          //calibration flag
+ 164          S32 xdata       slExtCur;
+ 165          U16 xdata       uiExtTemp1;
+ 166          U16 xdata       uiExtTemp2;
+ 167          
+ 168          //Gauge
+ 169          U16 xdata       uiRCCharge;                                     //Charge capacity statistics
+ 170          U16 xdata       uiRCDischarge;                          //Discharge capacity statistics
+ 171          U32 xdata       ulDsgCycleCount;                        //Discharge capacity statistics, for update E2uiCycleCount
+ 172          U32 xdata       ulFCCCount;                                     //The effective discharge capacity statistics, for updating E2ulFCC
+ 173          //BOOL bVDQFlag;
+ 174          
+ 175          
+ 176          //CADC
+ 177          U8      xdata   ucOCCcnt;
+ 178          U8      xdata   ucOCDcnt;
+C51 COMPILER V9.00   MEMORY                                                                12/09/2019 17:56:05 PAGE 4   
+
+ 179          U16     xdata   uiOCCRcnt;
+ 180          U16 xdata       uiOCDRcnt;
+ 181          
+ 182          U8  xdata       ucCadcCnt;
+ 183          S32 xdata       slCadcCurBuf[16];
+ 184          
+ 185          U8      data    ucCellNumOffset;
+ 186          U8      xdata   ucTempeMiddle;
+ 187          
+ 188          //Balance
+ 189          BOOL            bBalanceFlg;
+ 190          BOOL            bBalanceOddFlg;
+ 191          U16 xdata       uiBalanceChannel;
+ 192          //U8    xdata   ucBalanceCnt;
+ 193          
+ 194          //KEY
+ 195          U8      data    ucKeyValidCnt;
+ 196          U8      data    ucKeyInvalidCnt;
+ 197          U8      data    ucKeyValue;
+ 198          U8      data    ucKeyOldValue;
+ 199          U8      data    ucKeyValueBK;
+ 200          
+ 201          U8      xdata   ucLEDTimeCnt;
+ 202          S32 xdata   slCadcCurrent;
+ 203          S32 xdata   slCadcCurAverage;
+ 204          U8  xdata   ucDsgingSpeed;
+ 205          
+ 206          U16 xdata       uiTempeMin;
+ 207          U16 xdata       uiTempeMax;
+ 208          
+ 209          //Cell tap open 
+ 210          BOOL            bBalanceStateFlg;
+ 211          BOOL            bCTOValidFlg;                           //当电芯压差超过1200mV时，才认为存在断线，主要解决电芯电压低于2V情况下
+ 212          BOOL            bCellOpenDecFlag;
+ 213          BOOL            bBalancingFlg;
+ 214          U8 idata        ucCellOpenDecCnt;
+ 215          U8 idata        ucBalanceStep;
+ 216          U8 idata        ucCtoCnt;
+ 217          
+ 218          //Charge/Discharge Management
+ 219          SYSINFOR xdata Info;                                    //System information, For PC display
+ 220          AFEDATA  xdata AFE;                                             //Used to store SH367306 ADC Data collection
+ 221          AFEREG   xdata REG;                                             //Used to set AFE register and read AFE register
+ 222          
+ 223          RTC_VAR xdata RTC;                                              //For External RTC
+ 224          U16 xdata       uiE2PDataAddr;
+ 225          U8  xdata       ucRTCBKTime1;
+ 226          U16 xdata       uiRTCBKTime2;
+ 227          U8  xdata       ucRTCBuf[7];
+ 228          U8  idata       ucUpDataLimitTime;
+ 229          U8  xdata       ucExtRTC[6];                            //During calibration, the received RTC Time
+ 230          
+ 231          U16     xdata uiCHGValidTime;
+ 232          
+ 233          /**************************************************************************************/
+ 234          //DataFlash中区块地址定义
+ 235          /**************************************************************************************/
+ 236          //系统信息区开始 SubClassID=0x00                langth=48
+ 237          U16 xdata       E2uiPackConfigMap               _at_    SYS_PARA_MAP_ADDR; 
+ 238          U16 xdata       E2uiVOC[10]             _at_    SYS_PARA_MAP_ADDR+2;
+ 239          U32 xdata       E2ulDesignCapacity          _at_        SYS_PARA_MAP_ADDR+22;
+ 240          U32 xdata       E2ulFCC                                 _at_    SYS_PARA_MAP_ADDR+26;
+C51 COMPILER V9.00   MEMORY                                                                12/09/2019 17:56:05 PAGE 5   
+
+ 241          U32 xdata       E2ulCycleThreshold              _at_    SYS_PARA_MAP_ADDR+30;
+ 242          U16 xdata       E2uiCycleCount                  _at_    SYS_PARA_MAP_ADDR+34;
+ 243          U16 xdata       E2uiLearnLowTemp                _at_    SYS_PARA_MAP_ADDR+36;
+ 244          U16 xdata       E2uiNearFCC                             _at_    SYS_PARA_MAP_ADDR+38;
+ 245          S16 xdata       E2siDfilterCur                  _at_    SYS_PARA_MAP_ADDR+40;
+ 246          U8  xdata       E2ucDeleyLowPower       _at_    SYS_PARA_MAP_ADDR+42;
+ 247          U8  xdata       E2ucChgBKDelay                  _at_    SYS_PARA_MAP_ADDR+43;
+ 248          S16 xdata       E2uiChgBKCur                    _at_    SYS_PARA_MAP_ADDR+44;
+ 249          U8  xdata       E2ucRTCBKDelay                  _at_    SYS_PARA_MAP_ADDR+46;
+ 250          U8  xdata       ucRamCheckFlg1                  _at_    SYS_PARA_MAP_ADDR+47;
+ 251          
+ 252          //用户自定义参数区开始 SubClassID=0x01  langth=50
+ 253          U16 xdata       E2uiSWVersion           _at_    SYSINFO_MAP_ADDR;                       
+ 254          U16 xdata       E2uiHWVersion           _at_    SYSINFO_MAP_ADDR+2;                     
+ 255          U8  xdata       E2ucID                  _at_    SYSINFO_MAP_ADDR+4;                             
+ 256          U8  xdata       E2ucMNFName[12]         _at_    SYSINFO_MAP_ADDR+5;                     
+ 257          U32 xdata       E2ulMNFDate                             _at_    SYSINFO_MAP_ADDR+17;                                    
+ 258          U16 xdata       E2uiSerialNum                   _at_    SYSINFO_MAP_ADDR+21;                    
+ 259          U8  xdata       E2ucDeviceName[12]      _at_    SYSINFO_MAP_ADDR+23;    
+ 260          U8  xdata       E2ucDeviceChem[12]      _at_    SYSINFO_MAP_ADDR+35;            
+ 261          U16 xdata       E2uiChemID              _at_    SYSINFO_MAP_ADDR+47;
+ 262          U8  xdata       ucRamCheckFlg2                  _at_    SYSINFO_MAP_ADDR+49;
+ 263          
+ 264          //充电参数区开始 SubClassID=0x02                langth=18               
+ 265          U16 xdata       E2uiOVvol                               _at_    CHG_PARA_MAP_ADDR;
+ 266          U16 xdata       E2uiOVRvol                      _at_    CHG_PARA_MAP_ADDR+2;
+ 267          U8  xdata       E2ucDelayOV                     _at_    CHG_PARA_MAP_ADDR+4;
+ 268          U8  xdata       E2ucDelayOVR                    _at_    CHG_PARA_MAP_ADDR+5;
+ 269          U16 xdata       E2uiChgEndVol               _at_        CHG_PARA_MAP_ADDR+6;
+ 270          S16 xdata       E2siChgEndCur           _at_    CHG_PARA_MAP_ADDR+8;
+ 271          U8  xdata       E2ucDelayChgEnd                 _at_    CHG_PARA_MAP_ADDR+10;
+ 272          S32 xdata       E2slOCCvol                              _at_    CHG_PARA_MAP_ADDR+11;
+ 273          U8  xdata   E2ucDelayOCC                        _at_    CHG_PARA_MAP_ADDR+15;
+ 274          U8  xdata       E2ucDelayOCCR                   _at_    CHG_PARA_MAP_ADDR+16;
+ 275          U8  xdata       ucRamCheckFlg3                  _at_    CHG_PARA_MAP_ADDR+17;
+ 276          
+ 277          //放电参数区开始 SubClassID=0x03                langth=21
+ 278          U16 xdata       E2uiUVvol                       _at_    DSG_PARA_MAP_ADDR;
+ 279          U16 xdata       E2uiUVRvol              _at_    DSG_PARA_MAP_ADDR+2;
+ 280          U8  xdata       E2ucDelayUV                     _at_    DSG_PARA_MAP_ADDR+4;                                      // all the delay unit is 500mS
+ 281          U8  xdata       E2ucDelayUVR            _at_    DSG_PARA_MAP_ADDR+5;
+ 282          U16 xdata       E2uiDsgEndVol           _at_    DSG_PARA_MAP_ADDR+6;
+ 283          U8  xdata       E2ucDelayDsgEnd         _at_    DSG_PARA_MAP_ADDR+8;
+ 284          S32 xdata       E2slOCDvol                              _at_    DSG_PARA_MAP_ADDR+9;
+ 285          U8      xdata   E2ucDelayOCD                    _at_    DSG_PARA_MAP_ADDR+13;
+ 286          S32 xdata       E2slOCD2vol                             _at_    DSG_PARA_MAP_ADDR+14;
+ 287          U8  xdata       E2ucDelayOCD2                   _at_    DSG_PARA_MAP_ADDR+18;
+ 288          U8  xdata       E2ucDelayLoadR                  _at_    DSG_PARA_MAP_ADDR+19;
+ 289          U8  xdata       ucRamCheckFlg4                  _at_    DSG_PARA_MAP_ADDR+20;
+ 290          
+ 291          //放电PWM参数区开始 SubClassID=0x04             langth=5
+ 292          U16 xdata       E2uiDSG1PWMFreq                 _at_    DSG_PWM_PARA_MAP_ADDR; 
+ 293          U8  xdata       E2ucDSG1PWMRatioL       _at_    DSG_PWM_PARA_MAP_ADDR+2;                        
+ 294          U8  xdata       E2ucDSG1PWMRatioH       _at_    DSG_PWM_PARA_MAP_ADDR+3;                
+ 295          U8  xdata       ucRamCheckFlg5                  _at_    DSG_PWM_PARA_MAP_ADDR+4;
+ 296          
+ 297          //充电温度保护参数开始 SubClassID=0x05  langth=11
+ 298          U16 xdata       E2uiTempOTC                     _at_    CHG_TEMP_PARA_MAP_ADDR;
+ 299          U16 xdata       E2uiTempOTCR                    _at_    CHG_TEMP_PARA_MAP_ADDR+2;
+ 300          U16 xdata       E2uiTempUTC                 _at_        CHG_TEMP_PARA_MAP_ADDR+4;
+ 301          U16 xdata       E2uiTempUTCR                _at_        CHG_TEMP_PARA_MAP_ADDR+6;
+ 302          U8  xdata       E2ucDelayTemp                   _at_    CHG_TEMP_PARA_MAP_ADDR+8;
+C51 COMPILER V9.00   MEMORY                                                                12/09/2019 17:56:05 PAGE 6   
+
+ 303          U8  xdata       E2ucDelayTempR          _at_    CHG_TEMP_PARA_MAP_ADDR+9;
+ 304          U8  xdata       ucRamCheckFlg6                  _at_    CHG_TEMP_PARA_MAP_ADDR+10;
+ 305          
+ 306          //放电温度保护参数开始 SubClassID=0x06  langth=9
+ 307          U16 xdata       E2uiTempOTD                     _at_    DSG_TEMP_PARA_MAP_ADDR;
+ 308          U16 xdata       E2uiTempOTDR                    _at_    DSG_TEMP_PARA_MAP_ADDR+2;
+ 309          U16 xdata       E2uiTempUTD                     _at_    DSG_TEMP_PARA_MAP_ADDR+4;
+ 310          U16 xdata       E2uiTempUTDR                    _at_    DSG_TEMP_PARA_MAP_ADDR+6;
+ 311          U8  xdata       ucRamCheckFlg7                  _at_    DSG_TEMP_PARA_MAP_ADDR+8;
+ 312          
+ 313          //平衡参数区开始 SubClassID=0x08                langth=8
+ 314          U16 xdata       E2uiBalanceVol          _at_    BAL_PARA_MAP_ADDR;              
+ 315          U16 xdata       E2uiBalanceVolDiff      _at_    BAL_PARA_MAP_ADDR+2;            
+ 316          S16 xdata       E2siBalCurrent                  _at_    BAL_PARA_MAP_ADDR+4;    
+ 317          U8      xdata   E2ucBalanceDelay        _at_    BAL_PARA_MAP_ADDR+6;    
+ 318          U8  xdata       ucRamCheckFlg8                  _at_    BAL_PARA_MAP_ADDR+7;
+ 319          
+ 320          //AFE参数区开始 SubClassID=0x0A                 langth=4
+ 321          U8      xdata   E2ucAFEProtectConfig    _at_    AFE_PARA_MAP_ADDR;
+ 322          U16 xdata       E2uiAFEOVvol                    _at_    AFE_PARA_MAP_ADDR+1;
+ 323          U8  xdata       ucRamCheckFlg9                  _at_    AFE_PARA_MAP_ADDR+3;
+ 324          
+ 325          //校准参数区开始 SubClassID=0x0B                langth=12
+ 326          U16 xdata       E2uiVPackGain                   _at_    CALI_PARA_MAP_ADDR;             
+ 327          S16 xdata       E2siCadcGain                    _at_    CALI_PARA_MAP_ADDR+2;
+ 328          S16 xdata       E2siCadcOffset                  _at_    CALI_PARA_MAP_ADDR+4;                           
+ 329          S16 xdata       E2siTS1Offset                   _at_    CALI_PARA_MAP_ADDR+6;
+ 330          S16 xdata       E2siTS2Offset                   _at_    CALI_PARA_MAP_ADDR+8;
+ 331          U8  xdata       E2ucCalibrated                  _at_    CALI_PARA_MAP_ADDR+10;
+ 332          U8  xdata       ucRamCheckFlg10                 _at_    CALI_PARA_MAP_ADDR+11;
+ 333          
+ 334          U8  xdata   Reserved[RESERVED_DATA_LEN]     _at_    RESERVED_DATA_MAP_ADDR;
+ 335          
+ 336          //DataflashCheck
+ 337          U16 xdata       E2uiCheckFlag                   _at_    DATAFLASH_MAP_ADDR+510;         
+ 338          
+ 339          
+ 340          U8 xdata        ucUartBuf[150]                  _at_ 0x400;                     //For UART transmit or acceptance buffer
+ 341          U8 xdata        ucUartBufPT                     _at_ 0x400+150;         //Pointing to the current UART Buffer
+ 342          U8 xdata        ucUartSndLength                 _at_ 0x400+151;         //UART Buffer send length
+ 343          U8 xdata        ucUartTimeoutCnt                _at_ 0x400+152;         //UART timerout cnt, If not Uart communication within 2s, the
+             -n clear ucUartBufPT
+ 344          
+ 345          
+ 346          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =      5    ----
+   XDATA SIZE       =    275    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     21    ----
+   IDATA SIZE       =      4    ----
+   BIT SIZE         =     46    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

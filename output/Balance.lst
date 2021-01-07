@@ -1,0 +1,289 @@
+C51 COMPILER V9.00   BALANCE                                                               12/09/2019 17:56:06 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE BALANCE
+OBJECT MODULE PLACED IN .\output\Balance.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Balance.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJ
+                    -ECTEXTEND PRINT(.\output\Balance.lst) OBJECT(.\output\Balance.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          
+  11          
+  12          /*************************************************************************************************
+  13          * º¯ÊýÃû: BalManage
+  14          * ²Î  Êý: ÎÞ
+  15          * ·µ»ØÖµ: ÎÞ
+  16          * Ãè  Êö: 
+  17                  1. Æ½ºâ¿ªÆôÌõ¼þÊÇµçÑ¹¡¢Ñ¹²î¼°µçÁ÷ Í¬Ê±Âú×ã
+  18                  2. Æ½ºâ¹ý³ÌÖÐ£¬²»ÔÙ½øÐÐÆ½ºâ¼ì²â
+  19                  3. ¶ÏÏß¼ì²â½èÓÃÆ½ºâ
+  20          *************************************************************************************************/
+  21          void BalManage(void)
+  22          {
+  23   1              U8 i;
+  24   1      
+  25   1              if(!bBalancingFlg && !bCellOpenDecFlag)            //ÔÚÒ»¸öÆ½ºâÖÜÆÚÖÐ»ò¿ªÆô¶ÏÏß¼ì²âÊ±²»ÅÐ¶¨ÊÇ·ñ½øÐÐÆ½ºâ
+  26   1              {
+  27   2                  if(bBAL_EN)
+  28   2                  {
+  29   3                              uiBalanceChannel = 0;
+  30   3                      if(((uiCellVmax>E2uiOVvol)&&(!bHV))             //·¢ÉúÎÂ¶È±£»¤Ê±²»½øÐÐÆ½ºâ,ÅÐ¶¨½øÈë¹ýÑ¹¡¢¹ýÑ¹»Ö¸´¡¢½øÈë³äµç½ØÖ¹
+             -Ê±ÔÝÍ£Æ½ºâ 
+  31   3                                      ||((uiCellVmax < E2uiOVRvol)&&(bHV))
+  32   3                                      || bOTC || bUTC || bOTD || bUTD) 
+  33   3                      {
+  34   4                              bBalanceFlg = 0;
+  35   4                              ucBalanceTimeCnt = 0;
+  36   4                      }
+  37   3                      else
+  38   3                          {
+  39   4                              if(((uiCellVmax>E2uiBalanceVol) && (uiCellVmax-uiCellVmin)>=E2uiBalanceVolDiff) && (Info.slCurr>=E2
+             -siBalCurrent))
+  40   4                              {
+  41   5                                      if(!bBalanceFlg)
+  42   5                                      {
+  43   6                                              ucBalanceTimeCnt++;                                                                                                                      
+  44   6                                      }
+  45   5                                      if(ucBalanceTimeCnt >= BAL_DELAY_CNT)                                                                                    
+  46   5                                      {
+  47   6                                              for(i=ucCellNumOffset; i<ucCellNumOffset+ucCellNum; i++)
+  48   6                                              {
+  49   7                                                      if(((Info.uiVCell[i]-uiCellVmin)>=E2uiBalanceVolDiff)&&(Info.uiVCell[i]>=E2uiBalanceVol))       //µçÐ¾
+             -µçÑ¹´óÓÚÆ½ºâµçÑ¹£¬ÇÒÑ¹²î´óÓÚãÐÖµ£¬¿ªÆô¸ÃµçÐ¾Æ½ºâ
+  50   7                                                      {
+  51   8                                                              uiBalanceChannel |= (1<<i);
+C51 COMPILER V9.00   BALANCE                                                               12/09/2019 17:56:06 PAGE 2   
+
+  52   8                                                      }
+  53   7                                              }
+  54   6                                              bBalanceFlg = 1;
+  55   6                                      }
+  56   5                              }
+  57   4                              else
+  58   4                              {
+  59   5                                      bBalanceFlg = 0;
+  60   5                                      ucBalanceTimeCnt = 0;
+  61   5                              }
+  62   4                      }
+  63   3                      }
+  64   2              }       
+  65   1      }
+  66          
+  67          
+  68          /*************************************************************************************************
+  69          * º¯ÊýÃû: OpenBal£¬ CloseBal
+  70          * ²Î  Êý: ÎÞ
+  71          * ·µ»ØÖµ: ÎÞ
+  72          * Ãè  Êö: ¿ªÆôºÍ¹Ø±ÕÆ½ºâ
+  73          *************************************************************************************************/
+  74          void OpenBal(U16 BalChTemp)
+  75          {
+  76   1              REG.AFESCONF4 = BalChTemp>>5;       
+  77   1              TwiWriteAFE(AFE_SCONF4, &REG.AFESCONF4);
+  78   1              REG.AFESCONF5 = BalChTemp;
+  79   1              TwiWriteAFE(AFE_SCONF5, &REG.AFESCONF5);
+  80   1              bBalanceStateFlg = 1;
+  81   1      }
+  82          
+  83          void CloseBal(void)
+  84          {
+  85   1          if(bBalanceStateFlg)
+  86   1          {
+  87   2                      bBalanceStateFlg = 0;
+  88   2                      REG.AFESCONF4 = 0;
+  89   2                      TwiWriteAFE(AFE_SCONF4, &REG.AFESCONF4);                   //   CleaerBalance=0x00
+  90   2                      REG.AFESCONF5 = 0;
+  91   2                      TwiWriteAFE(AFE_SCONF5, &REG.AFESCONF5);                   //when dec the VADC must close the balance 
+  92   2              }
+  93   1      }
+  94          
+  95          
+  96          /*******************************************************************************
+  97          Function: CheckCtoVol(void)
+  98          Description:  
+  99          Input:          
+ 100          Output: 
+ 101          Others:
+ 102          *******************************************************************************/
+ 103          bit CheckCtoVol(void)
+ 104          {
+ 105   1          BOOL bResult=0;
+ 106   1      
+ 107   1              if(bCTO_EN)             //ÅÐ¶ÏÊÇ·ñÖ§³Ö¶ÏÏß¼ì²â
+ 108   1              {
+ 109   2                      if(!bCTO)       //Èç¹ûÒÑ¾­¼ì²âµ½¶ÏÏß£¬Ôò²»ÔÙ¼ì²â
+ 110   2                      {
+ 111   3                              if(bCTOValidFlg)        //ÅÐ¶ÏµçÑ¹Ñ¹²îÊÇ·ñ³¬¹ý1.2V
+ 112   3                              {
+ 113   4                                      if(uiVadcVmin < VOL_CELL_CUT_180MV)     //180mV
+C51 COMPILER V9.00   BALANCE                                                               12/09/2019 17:56:06 PAGE 3   
+
+ 114   4                                      {
+ 115   5                                              bResult = 1;
+ 116   5                                              if(++ucCtoCnt >= TIME_50MS_500MS)               //¶ÏÏß 500mS
+ 117   5                                              {
+ 118   6                                                      bCTO = 1;
+ 119   6                                              }
+ 120   5                                      }
+ 121   4                                      else
+ 122   4                                      {
+ 123   5                                              bCTOValidFlg = 0;
+ 124   5                                              ucCtoCnt = 0;
+ 125   5                                      }
+ 126   4                              }
+ 127   3                      }       
+ 128   2      #ifdef SP_CTO_RECOVER
+                              else            //¶ÏÏß»Ö¸´¹¦ÄÜ£¬Ã¿250mSÒ»¸öÖÜÆÚÅÐ¶Ï×îÐ¡µçÑ¹
+                              {
+                                      if(uiVadcVmin >= VOL_CELL_CUT_180MV)    //180mV
+                                      {
+                                              if(++ucCtoRCnt >= TIME_250MS_1S)
+                                              {
+                                                      bCTO = 0;
+                                              }
+                                      }
+                                      else
+                                      {
+                                              ucCtoRCnt = 0;
+                                      }
+                              }
+              #endif
+ 144   2              }
+ 145   1      
+ 146   1          return bResult;
+ 147   1      }
+ 148          
+ 149          
+ 150          /*************************************************************************************************
+ 151          * º¯ÊýÃû: BalProcess
+ 152          * ²Î  Êý: ÎÞ
+ 153          * ·µ»ØÖµ: ÎÞ
+ 154          * Ãè  Êö: 
+ 155                  1. Æ½ºâÖÜÆÚ·ÖÎª5¸öSTEP£¬ºÏ¼Æ250mS
+ 156                  2. Æ½ºâÐ§ÂÊ<100/(250mS*2)(²ÉÓÃÆæÅ¼Æ½ºâ)
+ 157                  3. Èç¹û¼ì²âµ½¶ÏÏß£¬Ôò³ÖÐø¿ªÆôÆ½ºâ½øÐÐ¶ÏÏß¼ì²â
+ 158                  4. Æ½ºâ¿ªÆôºó£¬Õý³£µÄµçÑ¹±£»¤ÅÐ¶ÏÑÓÊ±¿ÉÄÜ»á¶àÑÓÊ±250mS(Ò»¸öÆ½ºâÖÜÆÚ)
+ 159          *************************************************************************************************/
+ 160          void BalProcess(void)
+ 161          {
+ 162   1          U16 BalChTemp;
+ 163   1      
+ 164   1      //ÅÐ¶ÏµçÐ¾µçÑ¹Ñ¹²îÊÇ·ñ³¬¹ý1.2V£¬Èç¹û³¬¹ýÔòÔÊÐíÅÐ¶Ï¶ÏÏß£¬Ö÷Òª½â¾öµçÐ¾µçÑ¹<2VÇé¿öÏÂÆ½ºâ»á´¥·¢¶ÏÏßÅÐ¶ÏÌõ¼þ
+ 165   1      //ÅÐ¶ÏµçÐ¾×î´óµçÑ¹ÊÇ·ñÐ¡ÓÚ1.38V£¬Èç¹ûÐ¡ÓÚÔòÔÊÐíÅÐ¶Ï¶ÏÏß£¬Ö÷Òª½â¾öÎ´ÓÐÐ§¼ì²âµçÐ¾µçÑ¹µÄÇé¿öÏÂÑ¹²î²»Âú×ã¶ÏÏßÅ
+             -Ð¶ÏÌõ¼þ
+ 166   1              if((uiCellVmax-uiCellVmin>=VOL_CELL_CUT_1200MV) || (uiCellVmax<=VOL_CELL_CUT_1380MV))
+ 167   1              {
+ 168   2                      bCTOValidFlg = 1;
+ 169   2              }
+ 170   1          
+ 171   1          switch(ucBalanceStep)
+ 172   1          {
+ 173   2              case BALANCE_ENABLE:          //VADC²É¼¯µÄÊý¾ÝÓÃÓÚÕý³£µçÑ¹ÅÐ¶Ï
+ 174   2                  if(bCellOpenDecFlag || bBalanceFlg)
+C51 COMPILER V9.00   BALANCE                                                               12/09/2019 17:56:06 PAGE 4   
+
+ 175   2                      {
+ 176   3                          if(bBalanceOddFlg)                                                    //odd balance
+ 177   3                          {
+ 178   4                              BalChTemp = uiBalanceChannel&0x5555;                                                    
+ 179   4                          }
+ 180   3                          else                                                                                         //even balance
+ 181   3                          {
+ 182   4                              BalChTemp = uiBalanceChannel&0xAAAA;                                                    
+ 183   4                          }           
+ 184   3                                      OpenBal(BalChTemp);     //¿ªÆôÆ½ºâ                       
+ 185   3                          ucBalanceStep = BALANCE_START;
+ 186   3                          bBalancingFlg = 1;
+ 187   3                      }
+ 188   2                  break;
+ 189   2      
+ 190   2              case BALANCE_START:         //VADC²É¼¯µÄµçÑ¹Êý¾Ý¶ªµô
+ 191   2                  ucBalanceStep = BALANCING;
+ 192   2                  break;
+ 193   2      
+ 194   2              case BALANCING:             //VADC²É¼¯µÄµçÑ¹Êý¾ÝÅÐ¶Ï¶ÏÏß
+ 195   2                  if(!CheckCtoVol())      //Èç¹û·¢ÏÖÓÐ¶ÏÏßÔòÁ¬Ðø¼ì²â¶ÏÏß
+ 196   2                      {
+ 197   3                                      CloseBal();
+ 198   3                      ucBalanceStep = BALANCE_DISABLE;
+ 199   3                      bBalanceOddFlg = ~bBalanceOddFlg;
+ 200   3                      }
+ 201   2                  break;
+ 202   2      
+ 203   2              case BALANCE_DISABLE:       //VADC²É¼¯µÄµçÑ¹Êý¾Ý¶ªµô
+ 204   2                  if(!CheckCtoVol())      //Èç¹û·¢ÏÖÓÐ¶ÏÏßÔòÁ¬Ðø¼ì²â¶ÏÏß
+ 205   2                      {
+ 206   3                      ucBalanceStep = BALANCE_NULL;
+ 207   3                          }
+ 208   2                          else 
+ 209   2                          {
+ 210   3                      ucBalanceStep = BALANCE_ENABLE;
+ 211   3                      bBalanceOddFlg = ~bBalanceOddFlg;
+ 212   3                          }
+ 213   2                  break;
+ 214   2      
+ 215   2              case BALANCE_NULL:          //VADC²É¼¯µÄÊý¾ÝÓÃÓÚÕý³£µçÑ¹ÅÐ¶Ï
+ 216   2                  ucBalanceStep = BALANCE_ENABLE;
+ 217   2                  bCellOpenDecFlag = 0;
+ 218   2                  bBalanceFlg = 0;
+ 219   2                              bBalancingFlg = 0;              
+ 220   2                  break;
+ 221   2              }
+ 222   1      }
+ 223          
+ 224          
+ 225          /*************************************************************************************************
+ 226          * º¯ÊýÃû: CellOpenProcess
+ 227          * ²Î  Êý: ÎÞ
+ 228          * ·µ»ØÖµ: ÎÞ
+ 229          * Ãè  Êö: Ã¿2S¿ªÆôÒ»´Î¶ÏÏß¼ì²â
+ 230          *************************************************************************************************/
+ 231          void CellOpenProcess(void)
+ 232          {
+ 233   1      #ifdef SP_CTO_RECOVER
+                      if(bCTO_EN)                                     //Ö§³Ö¶ÏÏß»Ö¸´
+              #else
+ 236   1          if(bCTO_EN && !bCTO)                        //Èç¹ûÒÑ·¢Éú¶ÏÏßÔò²»¼ì²â
+C51 COMPILER V9.00   BALANCE                                                               12/09/2019 17:56:06 PAGE 5   
+
+ 237   1      #endif
+ 238   1              {
+ 239   2              if(++ucCellOpenDecCnt >= TIME_50MS_2250MS)      //2S
+ 240   2                      {
+ 241   3                              ucCellOpenDecCnt = TIME_50MS_2250MS;    //±ÜÃâ¸Ã¼ì²âÖÜÆÚÊÇÆ½ºâµÄÅ¼Êý±¶¹ØÏµ
+ 242   3                              if(!bBalancingFlg)                                              //Èç¹ûÕýÔÚÆ½ºâ£¬ÔòµÈÒ»¸öÆ½ºâÖÜÆÚ½áÊøºóÔÙ¿ªÆô¶ÏÏß¼ì²â
+ 243   3                              {
+ 244   4                      ucCellOpenDecCnt = 0;
+ 245   4                      bCellOpenDecFlag = 1;
+ 246   4                      uiBalanceChannel = 0x03ff;
+ 247   4                              }
+ 248   3                      }
+ 249   2              }       
+ 250   1      }
+ 251          
+ 252          
+ 253          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    677    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

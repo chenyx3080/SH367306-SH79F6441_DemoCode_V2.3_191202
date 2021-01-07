@@ -1,0 +1,1 @@
+"code\AfeMtp.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\AfeMtp.lst) OBJECT(.\output\AfeMtp.obj)

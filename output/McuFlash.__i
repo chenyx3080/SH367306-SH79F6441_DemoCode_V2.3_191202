@@ -1,0 +1,1 @@
+"code\McuFlash.c" LARGE OPTIMIZE (7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECTEXTEND PRINT(.\output\McuFlash.lst) OBJECT(.\output\McuFlash.obj)

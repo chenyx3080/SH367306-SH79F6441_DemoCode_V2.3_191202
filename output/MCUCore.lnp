@@ -1,0 +1,27 @@
+".\output\Main.obj",
+".\output\Initial.obj",
+".\output\Interrupt.obj",
+".\output\AfeProcess.obj",
+".\output\ShutDown.obj",
+".\output\Key.obj",
+".\output\Led.obj",
+".\output\Uart.obj",
+".\output\Common.obj",
+".\output\Memory.obj",
+".\output\STARTUP.obj",
+".\output\AfeMtp.obj",
+".\output\Balance.obj",
+".\output\Calibrate.obj",
+".\output\Calculate.obj",
+".\output\GasGauge.obj",
+".\output\McuFlash.obj",
+".\output\ExtE2PRom.obj",
+".\output\RTC.obj",
+".\output\TwiIO.obj",
+".\output\TwiModule.obj",
+".\output\ISP.obj" 
+TO ".\output\MCUCore" 
+PRINT(".\output\MCUCore.m51") RAMSIZE(256) 
+DISABLEWARNING (15,16) 
+CODE( ?CO?MEMORY(0x01fe),?PR?*?ISP(0xF400) )
+XDATA( 0X0200-0X0AFF )

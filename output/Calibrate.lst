@@ -1,0 +1,357 @@
+C51 COMPILER V9.00   CALIBRATE                                                             12/09/2019 17:56:06 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE CALIBRATE
+OBJECT MODULE PLACED IN .\output\Calibrate.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Calibrate.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG O
+                    -BJECTEXTEND PRINT(.\output\Calibrate.lst) OBJECT(.\output\Calibrate.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "ExtE2PRomRTC.h"
+  11          #include "Calibrate.h"
+  12          
+  13          
+  14          /*******************************************************************************
+  15          Function: CaliVoltageSub(void)
+  16          Description:  Calibration of the total voltage, Update "E2uiVPackGain"
+  17          Input:
+  18          Output: 
+  19          Others:
+  20          *******************************************************************************/
+  21          bit CaliVoltageSub(void)
+  22          {
+  23   1              U8 i;
+  24   1              U16 VPackTemp = 0;
+  25   1              BOOL result = 0;
+  26   1                      
+  27   1              for(i=ucCellNumOffset; i<(ucCellNumOffset+ucCellNum); i++)
+  28   1              {
+  29   2                      result = TWIReadAFE(AFE_CELL1H+2*i,(U8 xdata *)(&AFE.uiCell[0+i]));
+  30   2                      VPackTemp += AFE.uiCell[i];                                                                                      
+  31   2              }
+  32   1              if(result)
+  33   1              {
+  34   2                      E2uiVPackGain = (U32)CALIPACKVOL*VPackTemp/ulExtVPack;                                     //not really gain  really gain=3800/VpackG
+             -ain
+  35   2              }
+  36   1              
+  37   1              return  result;
+  38   1      }
+  39          
+  40          
+  41          /*******************************************************************************
+  42          Function: CaliCurrentSub(void)
+  43          Description:  Calibration current, update current gain"E2siCadcGain"
+  44          Input:
+  45          Output: 
+  46          Others:
+  47          *******************************************************************************/
+  48          bit CaliCurrentSub(void)
+  49          {
+  50   1          S16 xdata TempCur1,TempCur2,TempGain;
+  51   1              BOOL result = 0;
+  52   1      
+  53   1              result = TWIReadAFE(AFE_CURH,(U8 xdata *)&TempCur1);
+C51 COMPILER V9.00   CALIBRATE                                                             12/09/2019 17:56:06 PAGE 2   
+
+  54   1          Delay1ms(80);
+  55   1              result = TWIReadAFE(AFE_CURH,(U8 xdata *)&TempCur2);
+  56   1      
+  57   1              if(result)
+  58   1              {
+  59   2                  AFE.siCurr = (TempCur1+TempCur2)/2;
+  60   2                      if((AFE.siCurr&0x1000) != 0)                                                                      //must turn the REG to data of S16
+  61   2                      {
+  62   3                              AFE.siCurr |= 0xE000;
+  63   3                      }
+  64   2              
+  65   2                      TempGain = (S32)CALICUR*(AFE.siCurr-E2siCadcOffset)/slExtCur;               
+  66   2                      if(TempGain != 0)
+  67   2                      {
+  68   3                        E2siCadcGain = TempGain;
+  69   3                      }
+  70   2              }
+  71   1              
+  72   1              return  result;
+  73   1      }
+  74          
+  75          
+  76          /*******************************************************************************
+  77          Function: CaliCurOffsetSub(void)
+  78          Description:  
+  79          Input:          
+  80          Output: 
+  81          Others:
+  82          *******************************************************************************/
+  83          bit CaliCurOffsetSub(void)
+  84          {
+  85   1          S16 xdata TempCur1,TempCur2;
+  86   1              BOOL result = 0;
+  87   1      
+  88   1              result = TWIReadAFE(AFE_CURH,(U8 xdata *)&TempCur1);
+  89   1          Delay1ms(80);
+  90   1              result = TWIReadAFE(AFE_CURH,(U8 xdata *)&TempCur2);
+  91   1      
+  92   1              if(result)
+  93   1              {
+  94   2                      if((TempCur1&0x1000) != 0)                                                                        //must turn the REG to data of S16
+  95   2                      {
+  96   3                              TempCur1 |= 0xE000;
+  97   3                      }
+  98   2                      if((TempCur2&0x1000) != 0)                                                                        //must turn the REG to data of S16
+  99   2                      {
+ 100   3                              TempCur2 |= 0xE000;
+ 101   3                      }
+ 102   2                  AFE.siCurr = (TempCur1+TempCur2)/2;
+ 103   2                  E2siCadcOffset = AFE.siCurr;
+ 104   2              }
+ 105   1              
+ 106   1              return  result;
+ 107   1      }
+ 108          
+ 109          
+ 110          /*******************************************************************************
+ 111          Function: CaliTS1Sub(void)
+ 112          Description:  Calibration temperature, update temperature offset
+ 113          Input: 
+ 114          Output: 
+ 115          Others:
+C51 COMPILER V9.00   CALIBRATE                                                             12/09/2019 17:56:06 PAGE 3   
+
+ 116          *******************************************************************************/
+ 117          bit CaliTS1Sub(void)
+ 118          {
+ 119   1              S16 Tempe;
+ 120   1              BOOL result = 0;        
+ 121   1              
+ 122   1              result = TWIReadAFE(AFE_TS1H,(U8 xdata *)&AFE.uiTS1);
+ 123   1      
+ 124   1              if(result)
+ 125   1              {
+ 126   2                      Tempe = uiExtTemp1-CalcuTemp(AFE.uiTS1);
+ 127   2      
+ 128   2                      if(((Tempe-E2siTS1Offset)<150) && ((Tempe-E2siTS1Offset)>-150))
+ 129   2                      {
+ 130   3                              E2siTS1Offset = Tempe;
+ 131   3                      }
+ 132   2      
+ 133   2              }
+ 134   1              
+ 135   1              return  result;
+ 136   1      }
+ 137          
+ 138          
+ 139          /*******************************************************************************
+ 140          Function: CaliTS2Sub(void)
+ 141          Description:  Calibration temperature, update temperature offset
+ 142          Input: 
+ 143          Output: 
+ 144          Others:
+ 145          *******************************************************************************/
+ 146          bit CaliTS2Sub(void)
+ 147          {
+ 148   1              S16 Tempe;
+ 149   1              BOOL result = 0;        
+ 150   1      
+ 151   1              result = TWIReadAFE(AFE_TS2H,(U8 xdata *)&AFE.uiTS2);
+ 152   1      
+ 153   1              if(result)
+ 154   1              {
+ 155   2                      Tempe = uiExtTemp2-CalcuTemp(AFE.uiTS2);
+ 156   2              
+ 157   2                      if(((Tempe-E2siTS2Offset)<150) && ((Tempe-E2siTS2Offset)>-150))
+ 158   2                      {
+ 159   3                              E2siTS2Offset = Tempe;
+ 160   3                      }
+ 161   2              }
+ 162   1      
+ 163   1              return  result;
+ 164   1      }
+ 165          
+ 166          
+ 167          /*******************************************************************************
+ 168          Function: CaliRTCTime(void)
+ 169          Description:  
+ 170          Input:          
+ 171          Output: 
+ 172          Others:
+ 173          *******************************************************************************/
+ 174          bit CaliRTCTime(void)
+ 175          {
+ 176   1              BOOL result = 0;
+ 177   1      
+C51 COMPILER V9.00   CALIBRATE                                                             12/09/2019 17:56:06 PAGE 4   
+
+ 178   1              RTC.Year = ucExtRTC[5];
+ 179   1              RTC.Month = ucExtRTC[4];
+ 180   1              RTC.Date = ucExtRTC[3];
+ 181   1              RTC.Hour = ucExtRTC[2];
+ 182   1              RTC.Minute = ucExtRTC[1];
+ 183   1              RTC.Second = ucExtRTC[0];
+ 184   1              
+ 185   1              result = RTCModifyTime();
+ 186   1              
+ 187   1              bE2PProcessFlg = 1;
+ 188   1              bE2PBKRtc = 1;
+ 189   1      
+ 190   1              return  result;
+ 191   1      }
+ 192          
+ 193          
+ 194          /*******************************************************************************
+ 195          Function: CaliProcess(void)
+ 196          Description:  
+ 197          Input:          
+ 198          Output: 
+ 199          Others:
+ 200          *******************************************************************************/
+ 201          void CaliProcess(void)
+ 202          {
+ 203   1              BOOL result = 1;
+ 204   1      
+ 205   1              if((ucExtcaliSwitch1 & 0x01) != 0)                                      //Calibration of the total voltage
+ 206   1              {
+ 207   2                      if(!CaliVoltageSub())
+ 208   2                      {
+ 209   3                              result = 0;
+ 210   3                      }
+ 211   2                      else
+ 212   2                      {
+ 213   3                              ucExtcaliFlag |= 0x03;
+ 214   3                      }
+ 215   2              }
+ 216   1              
+ 217   1              if((ucExtcaliSwitch1 & 0x04) != 0)                                      //Calibration TS1                                       
+ 218   1              {
+ 219   2                      if(!CaliTS1Sub())
+ 220   2                      {
+ 221   3                              result = 0;
+ 222   3                      }
+ 223   2                      else
+ 224   2                      {
+ 225   3                              ucExtcaliFlag |= 0x04;
+ 226   3                      }
+ 227   2              }
+ 228   1              
+ 229   1              if((ucExtcaliSwitch1 & 0x08) != 0)                                      //Calibration TS2
+ 230   1              {
+ 231   2                      if(!CaliTS2Sub())
+ 232   2                      {
+ 233   3                              result = 0;
+ 234   3                      }
+ 235   2                      else
+ 236   2                      {
+ 237   3                              ucExtcaliFlag |= 0x08;
+ 238   3                      }
+ 239   2              }
+C51 COMPILER V9.00   CALIBRATE                                                             12/09/2019 17:56:06 PAGE 5   
+
+ 240   1              
+ 241   1              if((ucExtcaliSwitch1 & 0x10) != 0)                                      //Calibration current
+ 242   1              {
+ 243   2                      if(!CaliCurrentSub())
+ 244   2                      {
+ 245   3                              result = 0;
+ 246   3                      }
+ 247   2                      else
+ 248   2                      {
+ 249   3                              ucExtcaliFlag |= 0x10;
+ 250   3                      }
+ 251   2              }
+ 252   1              
+ 253   1              if((ucExtcaliSwitch1 & 0x20) != 0)                                      //Calibration CADC Current offset
+ 254   1              {
+ 255   2                      if(!CaliCurOffsetSub())
+ 256   2                      {
+ 257   3                              result = 0;
+ 258   3                      }
+ 259   2                      else
+ 260   2                      {
+ 261   3                              ucExtcaliFlag |= 0x20;
+ 262   3                      }
+ 263   2              }       
+ 264   1      
+ 265   1      //      if(ucExtcaliFlag == 0x3f)
+ 266   1      //      {
+ 267   1      //              ucExtcaliFlag = 0;
+ 268   1      //              bCAL = 1;
+ 269   1      //          bUpdataFlashFlg = 1;
+ 270   1      //      }
+ 271   1      //    else
+ 272   1      //    {
+ 273   1      //          bWriteFlashFlg = 1;                                 //Updated calibration parameters, and written to the flash
+ 274   1      //              ucWriteFlashCnt=0;
+ 275   1      //    }
+ 276   1      //      ucExtcaliSwitch1 = 0;   
+ 277   1      
+ 278   1              if((ucExtcaliSwitch1 & 0x80) != 0)                                      //Calibration RTC
+ 279   1              {
+ 280   2                      if(!CaliRTCTime())
+ 281   2                      {
+ 282   3                              result = 0;
+ 283   3                      }
+ 284   2                      else
+ 285   2                      {
+ 286   3                      ucExtcaliFlag |= 0x80;
+ 287   3                      }
+ 288   2              }
+ 289   1              
+ 290   1              if(bEnEEPRomBK)
+ 291   1              {
+ 292   2                      if(ucExtcaliFlag == 0xBF)
+ 293   2                      {
+ 294   3                              goto CaliAllOk;
+ 295   3                      }
+ 296   2              }
+ 297   1              else if(ucExtcaliFlag == 0x3f)
+ 298   1              {
+ 299   2      CaliAllOk:
+ 300   2                      ucExtcaliFlag = 0;
+ 301   2                      bCAL = 1;
+C51 COMPILER V9.00   CALIBRATE                                                             12/09/2019 17:56:06 PAGE 6   
+
+ 302   2                      E2ucCalibrated = CALI_FLAG;
+ 303   2                      bUpdataFlashFlg = 1;
+ 304   2              }
+ 305   1              
+ 306   1              ucExtcaliSwitch1 = 0;
+ 307   1              bWriteFlashFlg = 1;                                     //Updated calibration parameters, and written to the flash
+ 308   1      //    UpEepromWithDelay();
+ 309   1      
+ 310   1          if(result)
+ 311   1          {
+ 312   2              UART_SEND_ACK;
+ 313   2          }
+ 314   1          else
+ 315   1          {
+ 316   2              UART_SEND_NACK;
+ 317   2          }    
+ 318   1      }
+ 319          
+ 320          
+ 321          
+ 322          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    861    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      11
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       7
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

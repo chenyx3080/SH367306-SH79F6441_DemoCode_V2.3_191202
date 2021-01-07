@@ -1,0 +1,230 @@
+C51 COMPILER V9.00   GASGAUGE                                                              12/09/2019 17:56:07 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE GASGAUGE
+OBJECT MODULE PLACED IN .\output\GasGauge.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\GasGauge.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OB
+                    -JECTEXTEND PRINT(.\output\GasGauge.lst) OBJECT(.\output\GasGauge.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "GasGauge.h"
+  11          
+  12          
+  13          /*******************************************************************************
+  14          Function: GaugeManage(void)
+  15          Description: 
+  16          Input: 
+  17          Output: 
+  18          Others:
+  19          ********************************************************************************/
+  20          void GaugeManage(void)
+  21          {
+  22   1              U16 FccDelta;
+  23   1      
+  24   1              if(bCHGING | bAFE_SC | bOCC | bOCD)                                             //If the charge or discharge overcurrent
+  25   1              {
+  26   2                      bVDQ = 0;
+  27   2              }
+  28   1              else
+  29   1              {
+  30   2                      if(!bVDQ && (Info.ulRC>(Info.ulFCC-E2uiNearFCC)) && (uiTempeMin>E2uiLearnLowTemp))
+  31   2                      {
+  32   3                      bVDQ = 1;
+  33   3                      ulFCCCount = 0;
+  34   3                      }
+  35   2              }
+  36   1      
+  37   1              if(bCHGING)                                                                             //charging 
+  38   1              {
+  39   2                      uiRCCharge += slCadcCurAverage;                                 
+  40   2                      while(uiRCCharge >= VALUE_mAH)                          
+  41   2                      {
+  42   3                              uiRCCharge -= VALUE_mAH;                        
+  43   3                              if(Info.ulRC < Info.ulFCC)
+  44   3                              {
+  45   4                                      UART_IRQ_DISABLE;
+  46   4                                      Info.ulRC++;                                                    //have charged 1mAh
+  47   4                                      UART_IRQ_ENABLE;
+  48   4                              }
+  49   3                              else      
+  50   3                              {
+  51   4                                      UART_IRQ_DISABLE;
+  52   4                                      Info.ulRC = Info.ulFCC;                         
+  53   4                                      UART_IRQ_ENABLE;                        
+  54   4                                      uiRCCharge = 0;
+C51 COMPILER V9.00   GASGAUGE                                                              12/09/2019 17:56:07 PAGE 2   
+
+  55   4                              }
+  56   3                      }
+  57   2              }
+  58   1              else if(bDSGING)                                                                                                        //discharging
+  59   1              {
+  60   2                      uiRCDischarge += -slCadcCurAverage;
+  61   2                      if(uiRCDischarge >= VALUE_mAH)
+  62   2                      {
+  63   3                              while(uiRCDischarge >= VALUE_mAH)                                       
+  64   3                              {
+  65   4                                      uiRCDischarge -= VALUE_mAH;
+  66   4                                      ulDsgCycleCount++;                                                      
+  67   4                                      if(Info.ulRC > 0)
+  68   4                                      {
+  69   5                                              UART_IRQ_DISABLE;
+  70   5                                              Info.ulRC--;
+  71   5                                              UART_IRQ_ENABLE;
+  72   5                                      }
+  73   4                                      if(bVDQ)
+  74   4                                      {
+  75   5                                              ulFCCCount++;
+  76   5                                      }
+  77   4                              }
+  78   3                              
+  79   3                              if(ulDsgCycleCount >= E2ulCycleThreshold)                               
+  80   3                              {
+  81   4                                      ulDsgCycleCount -= E2ulCycleThreshold;
+  82   4                                      E2uiCycleCount++;
+  83   4                                  Info.uiCycleCount = E2uiCycleCount;
+  84   4                                      bWriteFlashFlg = 1;                                                                     //write E2uiCycleCount to flash flag
+  85   4                                      ucWriteFlashCnt=0;
+  86   4      //                      UpEepromWithDelay();
+  87   4                              }
+  88   3                      }
+  89   2              }
+  90   1              
+  91   1              if(Info.ulRC < Info.ulFCC)                                                                                      //Calculate RSOC
+  92   1              {
+  93   2                      UART_IRQ_DISABLE;
+  94   2                      Info.uiRSOC = (U32)Info.ulRC*100/Info.ulFCC;
+  95   2                      UART_IRQ_ENABLE;
+  96   2              }
+  97   1              else                                                                                            
+  98   1              {
+  99   2                      UART_IRQ_DISABLE;
+ 100   2                      Info.uiRSOC = 100;
+ 101   2                      UART_IRQ_ENABLE;
+ 102   2              }
+ 103   1      
+ 104   1              if(bFD) //Discharge end
+ 105   1              {
+ 106   2                      if(bVDQ)                                                                                                                        //E2ulFCC updata
+ 107   2                      {
+ 108   3                              FccDelta = (Info.ulFCC/10)*FCC_UPDATE_PERCENT;
+ 109   3                              
+ 110   3                              if(ulFCCCount > Info.ulFCC+FccDelta)
+ 111   3                              {
+ 112   4                                      ulFCCCount = Info.ulFCC + FccDelta;
+ 113   4                              }
+ 114   3                              else if(ulFCCCount+FccDelta < Info.ulFCC)
+ 115   3                              {
+ 116   4                                      ulFCCCount = Info.ulFCC - FccDelta;
+C51 COMPILER V9.00   GASGAUGE                                                              12/09/2019 17:56:07 PAGE 3   
+
+ 117   4                              }
+ 118   3                              UART_IRQ_DISABLE;
+ 119   3                              Info.ulFCC = ulFCCCount;                                                                                        //write E2ulFCC to flash
+ 120   3                              UART_IRQ_ENABLE;
+ 121   3                              E2ulFCC = ulFCCCount;
+ 122   3                              bVDQ = 0;
+ 123   3                  bWriteFlashFlg = 1;                                 //Updated calibration parameters, and written to the flash
+ 124   3                      ucWriteFlashCnt=0;
+ 125   3      //              UpEepromWithDelay();
+ 126   3                      }
+ 127   2      
+ 128   2      
+ 129   2                      UART_IRQ_DISABLE;
+ 130   2                      if(Info.uiRSOC > 10)
+ 131   2                      {
+ 132   3                              Info.uiRSOC = 10;
+ 133   3                      }
+ 134   2                      Info.ulRC = Info.ulFCC*Info.uiRSOC/100;
+ 135   2                      UART_IRQ_ENABLE;
+ 136   2              }
+ 137   1              else if(bFC)    //Charge end
+ 138   1              {
+ 139   2                      UART_IRQ_DISABLE;
+ 140   2                      Info.ulRC = Info.ulFCC;
+ 141   2                      Info.uiRSOC = 100;
+ 142   2                      UART_IRQ_ENABLE;
+ 143   2              }
+ 144   1              
+ 145   1              UART_IRQ_DISABLE;
+ 146   1              if(bUV)                                                                                                                                                 //OverVoltage Protect
+ 147   1              {
+ 148   2                      Info.ulRC = 0;                                                                                                                          
+ 149   2                      Info.uiRSOC = 0;
+ 150   2              }
+ 151   1              else if(bHV)                                                                                                                                    //UnderVoltage Protect
+ 152   1              {
+ 153   2                      Info.ulRC = Info.ulFCC;
+ 154   2                      Info.uiRSOC = 100;
+ 155   2              }
+ 156   1              UART_IRQ_ENABLE;
+ 157   1      }
+ 158          
+ 159          
+ 160          /*******************************************************************************
+ 161          Function:InitGasGauge() 
+ 162          Description: Calculate the remaining capacity according to pack voltage  
+ 163          Input:  NULL    
+ 164          Output: NULL
+ 165          Others:
+ 166          *******************************************************************************/
+ 167          void InitGasGauge(void)
+ 168          {
+ 169   1              U8 i;
+ 170   1              
+ 171   1              Info.uiRSOC = 100;
+ 172   1              for(i=0; i<10; i++)
+ 173   1              {
+ 174   2                      if(Info.ulVoltage < E2uiVOC[i]*ucCellNum)
+ 175   2                      {
+ 176   3                              if(i == 0)
+ 177   3                              {
+ 178   4                                      if(Info.ulVoltage < E2uiDsgEndVol*ucCellNum)
+C51 COMPILER V9.00   GASGAUGE                                                              12/09/2019 17:56:07 PAGE 4   
+
+ 179   4                                      {
+ 180   5                                              Info.uiRSOC = 0;        
+ 181   5                                      }
+ 182   4                                      else
+ 183   4                                      {
+ 184   5                                              Info.uiRSOC = (U32)(Info.ulVoltage-E2uiDsgEndVol*ucCellNum)*10/((E2uiVOC[0]-E2uiDsgEndVol)*ucCellNum
+             -);        
+ 185   5                                      }
+ 186   4                                      break;
+ 187   4                              }
+ 188   3                              else
+ 189   3                              {
+ 190   4                                      Info.uiRSOC = 10*i + (U32)(Info.ulVoltage-E2uiVOC[i-1]*ucCellNum)*10/((E2uiVOC[i]-E2uiVOC[i-1])*ucCell
+             -Num);
+ 191   4                                      break;
+ 192   4                              }
+ 193   3                      }
+ 194   2              }
+ 195   1      
+ 196   1              Info.ulRC = E2ulFCC*Info.uiRSOC/100;
+ 197   1      }
+ 198          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1581    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

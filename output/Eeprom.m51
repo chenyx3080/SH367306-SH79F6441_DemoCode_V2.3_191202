@@ -1,0 +1,48 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        12/10/2019  11:35:45  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE .\output\DataFlash.obj TO .\output\Eeprom PRINT (.\output\Eeprom.m51) RAMSIZE (256) DISABLEW
+>> ARNING (16) CODE (?CO?DATAFLASH (0X0000)) XDATA (0X0200-0X04FE)
+
+
+MEMORY MODEL: LARGE
+
+
+INPUT MODULES INCLUDED:
+  .\output\DataFlash.obj (DATAFLASH)
+
+
+LINK MAP OF MODULE:  .\output\Eeprom (DATAFLASH)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0400H     UNIT         ?CO?DATAFLASH
+
+
+
+OVERLAY MAP OF MODULE:   .\output\Eeprom (DATAFLASH)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+
+
+SYMBOL TABLE OF MODULE:  .\output\Eeprom (DATAFLASH)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        DATAFLASH
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  C:0000H         PUBLIC        dataflash
+  -------         ENDMOD        DATAFLASH
+
+*** WARNING L10: CANNOT DETERMINE ROOT SEGMENT
+
+Program Size: data=0.0 xdata=0 code=1024
+LINK/LOCATE RUN COMPLETE.  1 WARNING(S),  0 ERROR(S)

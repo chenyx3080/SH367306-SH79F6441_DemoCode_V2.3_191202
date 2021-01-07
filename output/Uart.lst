@@ -1,0 +1,737 @@
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\output\Uart.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\Uart.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG OBJECT
+                    -EXTEND PRINT(.\output\Uart.lst) OBJECT(.\output\Uart.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "ISP.h"
+  11          
+  12          
+  13          /*******************************************************************************
+  14          Function: Page1WrRdFuncTable()
+  15          Description:
+  16          Input:  NULL    
+  17          Output: NULL
+  18          Others: NULL
+  19          *******************************************************************************/
+  20          U16 code Page1WrRdFuncTable[18]=
+  21          {
+  22              SYS_PARA_MAP_ADDR,               //SubClassID 0x00
+  23              SYSINFO_MAP_ADDR,               //0x01
+  24              CHG_PARA_MAP_ADDR,               //0x02
+  25              DSG_PARA_MAP_ADDR,               //0x03
+  26              0x00,
+  27              DSG_PWM_PARA_MAP_ADDR,            //0x04
+  28              CHG_TEMP_PARA_MAP_ADDR,           //0x05
+  29              DSG_TEMP_PARA_MAP_ADDR,           //0x06                           //0x07
+  30              BAL_PARA_MAP_ADDR,               //0x08
+  31              0x00,                           //0x09
+  32              AFE_PARA_MAP_ADDR,               //0x0A
+  33              CALI_PARA_MAP_ADDR,              //0x0B
+  34              DataflashCheck_Map_ADDR,        //0x0C
+  35              0x00,                           //0x0D
+  36              0x00,                           //0x0E
+  37              0x00,                           //0x0F
+  38              0x00,                           //0x10
+  39              0x00,                           //0x11
+  40          };
+  41              
+  42          /*******************************************************************************
+  43          Function: Page2WrRdFuncTable()
+  44          Description:
+  45          Input:  NULL    
+  46          Output: NULL
+  47          Others: NULL
+  48          *******************************************************************************/
+  49          U16 code Page2WrRdFuncTable[18]=
+  50          {
+  51              SYS_PARA_MAP_ADDR+32,            //SubClassID 0x00
+  52              SYSINFO_MAP_ADDR+32,            //0x01
+  53              CHG_PARA_MAP_ADDR+32,            //0x02
+  54              DSG_PARA_MAP_ADDR+32,            //0x03
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 2   
+
+  55                  0x00,
+  56              DSG_PWM_PARA_MAP_ADDR+32,         //0x04
+  57              CHG_TEMP_PARA_MAP_ADDR+32,        //0x05
+  58              DSG_TEMP_PARA_MAP_ADDR+32,        //0x06                           //0x07
+  59              BAL_PARA_MAP_ADDR+32,            //0x08
+  60              0x00,                           //0x09
+  61              AFE_PARA_MAP_ADDR+32,            //0x0A
+  62              CALI_PARA_MAP_ADDR+32,           //0x0B
+  63              DataflashCheck_Map_ADDR+32,     //0x0C
+  64              0x00,                           //0x0D
+  65              0x00,                           //0x0E
+  66              0x00,                           //0x0F
+  67              0x00,                           //0x10
+  68              0x00,                           //0x11
+  69          };
+  70          
+  71          /*******************************************************************************
+  72          Function: InitUART0()
+  73          Description: Init UART1  
+  74          Input:  NULL
+  75          Output: NULL
+  76          Others:
+  77          *******************************************************************************/
+  78          void InitUART0(void)
+  79          {
+  80   1      
+  81   1          UART0CR = 0x32;
+  82   1              PCON = 0x00;    
+  83   1              SCON = 0x50;            //配置Uart工作在模式1
+  84   1              SBRTH = 0xff;           //配置波特率参数，波特率9600
+  85   1              SBRTL = 0x64;           //计算公式：(int)X=FSY/(16*波特率) ;  SBRT=32768-X  ;   SFINE=（FSY/波特率）-16*X   FSY=24
+             -M
+  86   1              SFINE = 0x04;
+  87   1              SADDR = 0x0A;
+  88   1              SADEN = 0xFF;
+  89   1      
+  90   1      
+  91   1              ucUartBufPT = 0;
+  92   1              ucUartTimeoutCnt = 0;
+  93   1      }
+  94          
+  95          
+  96          /*******************************************************************************
+  97          Function:ISPHandshake() 
+  98          Description:  Processing ISP Handshake
+  99          Input:   NULL
+ 100          Output: NULL
+ 101          Others:
+ 102          *******************************************************************************/
+ 103          //U8 code ISPCODE[8] = {0x05,0x0a,0x09,0x06,'I','S','P'};
+ 104          U8 code ISPCODE[10] = {0,7,0x05,0x0a,0x09,0x06,'I','S','P'};
+ 105          void ISPHandshake(void)
+ 106          {
+ 107   1              U8 i;
+ 108   1              
+ 109   1              for(i=0; i<9; i++)
+ 110   1              {
+ 111   2                      if(ucUartBuf[2+i] != ISPCODE[i])
+ 112   2                      {
+ 113   3                              UART_SEND_NACK;
+ 114   3                              return;                  
+ 115   3                      }
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 3   
+
+ 116   2              }
+ 117   1              bISPFlg = 1;
+ 118   1              bUartSndAckFlg = 0;
+ 119   1              UART_SEND_ACK;
+ 120   1      }
+ 121          
+ 122          
+ 123          /*******************************************************************************
+ 124          Function:UartHandshake() 
+ 125          Description:  PC and slave handshake
+ 126          Input:  NULL
+ 127          Output: NULL
+ 128          Others:
+ 129          *******************************************************************************/
+ 130          void UartHandshake(void)
+ 131          {
+ 132   1              if(ucUartBuf[2] == 0x00)        //Testing equipment is properly
+ 133   1              {
+ 134   2                      UART_SEND_ACK;
+ 135   2              }
+ 136   1              else
+ 137   1              {
+ 138   2                      UART_SEND_NACK;
+ 139   2              }
+ 140   1      }
+ 141          
+ 142          
+ 143           /*******************************************************************************
+ 144          Function:UartWriteInfo() 
+ 145          Description:  write the information: MCU Info
+ 146          Input:  *prt---Data storage address
+ 147          Output: NULL
+ 148          Others:
+ 149          *******************************************************************************/
+ 150          void UartWriteInfo(U8 xdata *ptr)                   //PC write to MCU
+ 151          {
+ 152   1              U8 i;
+ 153   1              
+ 154   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 155   1              {
+ 156   2                      for(i=0; i<ucUartBuf[UART_LENGTH]; i++)
+ 157   2                      {
+ 158   3                              RSTSTAT = 0x00;
+ 159   3                              *ptr = ucUartBuf[3+i];
+ 160   3                              ptr++;
+ 161   3                      }
+ 162   2                      
+ 163   2                      bWriteFlashFlg = 1;         //Updated parameters, and written to the flash
+ 164   2      //        UpEepromWithDelay();
+ 165   2                      ucWriteFlashCnt=0;
+ 166   2                      
+ 167   2                      UART_SEND_ACK;
+ 168   2              }
+ 169   1              else
+ 170   1              {
+ 171   2                      UART_SEND_NACK;
+ 172   2              }
+ 173   1      }
+ 174          
+ 175          
+ 176           /*******************************************************************************
+ 177          Function:UartReadInfo() 
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 4   
+
+ 178          Description:  Read the information: Battery Info, MCU Info, MTP Info
+ 179          Input:  *prt---Data storage address
+ 180          Output: NULL
+ 181          Others:
+ 182          *******************************************************************************/
+ 183          void UartReadInfo(U8 xdata *ptr)
+ 184          {
+ 185   1              U8 i;
+ 186   1      
+ 187   1              if(ucUartBuf[UART_LENGTH] > 140)
+ 188   1              {
+ 189   2                      ucUartBuf[UART_LENGTH] = 0;
+ 190   2              }
+ 191   1              
+ 192   1              for(i=0; i<ucUartBuf[UART_LENGTH]; i++)
+ 193   1              {
+ 194   2                      RSTSTAT = 0x00;
+ 195   2                      ucUartBuf[3+i] =  *ptr;
+ 196   2                      ptr++;
+ 197   2              }
+ 198   1              ucUartBuf[3+ucUartBuf[UART_LENGTH]] = CRC8cal(&ucUartBuf,ucUartBuf[UART_LENGTH]+3);
+ 199   1              
+ 200   1              UART_SEND_DATA;                 //Start Send Data; Set UART REG
+ 201   1      }
+ 202          
+ 203          /*******************************************************************************
+ 204          Function:WriteManufacture() 
+ 205          Description:  write the information: User-defined,  For example, a software reset and forced into sleep
+ 206          Input:  *prt---Data storage address
+ 207          Output: NULL
+ 208          Others:
+ 209          *******************************************************************************/
+ 210          void WriteManufacture(void)
+ 211          { 
+ 212   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 213   1              {
+ 214   2                      if(ucUartBuf[4] == 0x41)            //0x0041: Reset system
+ 215   2                      {
+ 216   3                              ucResetFlag = 0x12;
+ 217   3                      }
+ 218   2                      else if(ucUartBuf[4] == 0x05)         //0x0005: Enter sleep mode
+ 219   2                      {
+ 220   3                              bPCSleepFlg = 1;
+ 221   3                      }
+ 222   2                      bUartSndAckFlg = 0;
+ 223   2                      UART_SEND_ACK;
+ 224   2              }
+ 225   1              else
+ 226   1              {
+ 227   2                      UART_SEND_NACK;
+ 228   2              }
+ 229   1      }
+ 230          
+ 231          
+ 232          void ReadSubClassID(void)
+ 233          {
+ 234   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 235   1              {
+ 236   2                      ucSubClassID=ucUartBuf[3];
+ 237   2                      
+ 238   2                      bUartSndAckFlg = 0;
+ 239   2                      UART_SEND_ACK;
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 5   
+
+ 240   2              }
+ 241   1              else
+ 242   1              {
+ 243   2                      UART_SEND_NACK;
+ 244   2              }
+ 245   1      }
+ 246          
+ 247          
+ 248          
+ 249          /*******************************************************************************
+ 250          Function:UartRdCmdProcess() 
+ 251          Description:  Processing Uart read command  
+ 252          Input:   NULL
+ 253          Output: NULL
+ 254          Others:
+ 255          *******************************************************************************/
+ 256          void UartRdCmdProcess(void)
+ 257          {
+ 258   1          U8 xdata *rdaddr;
+ 259   1          
+ 260   1          switch(ucUartBuf[UART_CMD_NO])
+ 261   1          {
+ 262   2              case 0xA0:
+ 263   2                  UartHandshake();
+ 264   2              break;
+ 265   2      
+ 266   2              case CELL1:
+ 267   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset]);
+ 268   2              break;
+ 269   2      
+ 270   2              case CELL2:
+ 271   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+1]);
+ 272   2              break;
+ 273   2      
+ 274   2              case CELL3:
+ 275   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+2]);
+ 276   2              break;
+ 277   2      
+ 278   2              case CELL4:
+ 279   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+3]);
+ 280   2              break;
+ 281   2      
+ 282   2              case CELL5:
+ 283   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+4]);
+ 284   2              break;
+ 285   2      
+ 286   2              case CELL6:
+ 287   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+5]);
+ 288   2              break;
+ 289   2      
+ 290   2              case CELL7:
+ 291   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+6]);
+ 292   2              break;
+ 293   2      
+ 294   2              case CELL8:
+ 295   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+7]);
+ 296   2              break;
+ 297   2      
+ 298   2              case CELL9:
+ 299   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+8]);
+ 300   2              break;
+ 301   2      
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 6   
+
+ 302   2              case CELL10:
+ 303   2                  UartReadInfo((U8 xdata *)&Info.uiVCell[ucCellNumOffset+9]);
+ 304   2              break;
+ 305   2                      
+ 306   2                      case TOTAL_VOLTAGE:
+ 307   2                  UartReadInfo((U8 xdata *)&Info.ulVoltage);
+ 308   2              break;
+ 309   2      
+ 310   2              case CADC_CURRENT:
+ 311   2                  UartReadInfo((U8 xdata *)&Info.slCurr);
+ 312   2              break;
+ 313   2                      
+ 314   2              case EXT_TEMP1:
+ 315   2                  UartReadInfo((U8 xdata *)&Info.uiTemp1);
+ 316   2              break;
+ 317   2      
+ 318   2              case EXT_TEMP2:
+ 319   2                  UartReadInfo((U8 xdata *)&Info.uiTemp2);
+ 320   2              break;
+ 321   2      
+ 322   2              case DIE_TEMP1:
+ 323   2                  UartReadInfo((U8 xdata *)&Info.uiICTemp1);
+ 324   2              break;
+ 325   2      
+ 326   2              case DIE_TEMP2:
+ 327   2               UartReadInfo((U8 xdata *)&Info.uiICTemp2);
+ 328   2              break;
+ 329   2      
+ 330   2              case FULL_CHG_CAP:
+ 331   2                  UartReadInfo((U8 xdata *)&Info.ulFCC);
+ 332   2              break;
+ 333   2      
+ 334   2              case REMAIN_CAP:
+ 335   2                  UartReadInfo((U8 xdata *)&Info.ulRC);
+ 336   2              break;
+ 337   2      
+ 338   2              case R_SOC:
+ 339   2                  UartReadInfo((U8 xdata *)&Info.uiRSOC);
+ 340   2              break;
+ 341   2      
+ 342   2              case CYCLE_COUNT:
+ 343   2                  UartReadInfo((U8 xdata *)&Info.uiCycleCount);
+ 344   2              break;
+ 345   2      
+ 346   2              case PACK_STATUS:
+ 347   2                  UartReadInfo((U8 xdata *)&Info.uiPackStatus);
+ 348   2              break;
+ 349   2      
+ 350   2              case BATTERY_STATUS:
+ 351   2                  UartReadInfo((U8 xdata *)&Info.uiBatStatus);
+ 352   2              break;
+ 353   2      
+ 354   2              case PACK_CONFIG:
+ 355   2                  UartReadInfo((U8 xdata *)&Info.uiPackConfig);
+ 356   2              break;
+ 357   2      
+ 358   2              case MANUFACTURE_COMMAND:
+ 359   2                  UartReadInfo((U8 xdata *)&Info.uiManuCommand);
+ 360   2              break;
+ 361   2      
+ 362   2              case ISP_COMMAND:
+ 363   2                  ISPHandshake();
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 7   
+
+ 364   2              break;
+ 365   2                      
+ 366   2              default:    //read extern EEPRom data
+ 367   2                  if(ucUartBuf[UART_LENGTH] >= 128)
+ 368   2                              {
+ 369   3                                      bE2PProcessFlg = 1;
+ 370   3                      bE2PRdData = 1;
+ 371   3                              }
+ 372   2                              else if(ucUartBuf[UART_CMD_NO] == SUB_PAGE1 && ucSubClassID == RTC_SUBID)
+ 373   2                  {
+ 374   3                                      bE2PProcessFlg = 1;
+ 375   3                                      bRTCRdTime = 1;
+ 376   3                              }
+ 377   2                              else if(ucUartBuf[UART_CMD_NO] == SUB_PAGE1)
+ 378   2                  {
+ 379   3                      rdaddr = (U8 xdata *)Page1WrRdFuncTable[ucSubClassID];
+ 380   3                      UartReadInfo(rdaddr);
+ 381   3                  }
+ 382   2                  else if(ucUartBuf[UART_CMD_NO] == SUB_PAGE2)
+ 383   2                  {
+ 384   3                      rdaddr = (U8 xdata *)Page2WrRdFuncTable[ucSubClassID];
+ 385   3                      UartReadInfo(rdaddr);
+ 386   3                  }
+ 387   2                              break;
+ 388   2          }
+ 389   1      }
+ 390          
+ 391          
+ 392          /*******************************************************************************
+ 393          Function:CalibVoltage() 
+ 394          Description:  Prepare calibration voltage, include pack voltage & cell voltage
+ 395          Input:   NULL
+ 396          Output: NULL
+ 397          Others:
+ 398          *******************************************************************************/
+ 399          void CalibVoltage(void)
+ 400          {       
+ 401   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 402   1              {
+ 403   2                      bCalibrationFlg = 1;
+ 404   2                      ulExtVPack = ((U16)ucUartBuf[3]<<8)|ucUartBuf[4];
+ 405   2                      ucExtcaliSwitch1 |= 0x01;
+ 406   2      
+ 407   2                      UART_SEND_ACK;
+ 408   2              }
+ 409   1              else
+ 410   1              {
+ 411   2                      UART_SEND_NACK; 
+ 412   2              }
+ 413   1      }
+ 414          
+ 415          
+ 416          /*******************************************************************************
+ 417          Function:CalibCurrent() 
+ 418          Description:  Prepare calibration zero current and discharge current
+ 419          Input:   NULL
+ 420          Output: NULL
+ 421          Others:
+ 422          *******************************************************************************/
+ 423          void CalibCurrent(void)
+ 424          {
+ 425   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 8   
+
+ 426   1              {
+ 427   2                      bCalibrationFlg = 1;
+ 428   2                      slExtCur = ((U32)ucUartBuf[3]<<24)
+ 429   2                                                      | ((U32)ucUartBuf[4]<<16)
+ 430   2                                                      | ((U32)ucUartBuf[5]<<8)
+ 431   2                                                      | ((U32)ucUartBuf[6]);
+ 432   2                      ucExtcaliSwitch1 |= 0x10;
+ 433   2      
+ 434   2                      UART_SEND_ACK;
+ 435   2              }
+ 436   1              else
+ 437   1              {
+ 438   2                      UART_SEND_NACK;
+ 439   2              }
+ 440   1      }
+ 441          
+ 442          
+ 443          void CalibCurOffset(void)
+ 444          {
+ 445   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 446   1              {
+ 447   2                      bCalibrationFlg = 1;                                    //Calibration offset Current
+ 448   2                      ucExtcaliSwitch1 |= 0x20;
+ 449   2      
+ 450   2                      UART_SEND_ACK;
+ 451   2              }
+ 452   1              else
+ 453   1              {
+ 454   2                      UART_SEND_NACK; 
+ 455   2              }
+ 456   1      }
+ 457          
+ 458          
+ 459          /*******************************************************************************
+ 460          Function:CalibTemperature() 
+ 461          Description:  Prepare calibration temperature
+ 462          Input:   NULL
+ 463          Output: NULL
+ 464          Others:
+ 465          *******************************************************************************/
+ 466          void CalibTS1(void)
+ 467          {
+ 468   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 469   1              {
+ 470   2                      bCalibrationFlg = 1;                                    //Calibration TS1
+ 471   2                      uiExtTemp1 = ((U16)ucUartBuf[3]<<8)|ucUartBuf[4];
+ 472   2                      ucExtcaliSwitch1 |= 0x04;
+ 473   2      
+ 474   2                      UART_SEND_ACK;
+ 475   2              }
+ 476   1              else
+ 477   1              {
+ 478   2                      UART_SEND_NACK; 
+ 479   2              }
+ 480   1      }
+ 481          
+ 482          
+ 483          void CalibTS2(void)
+ 484          {
+ 485   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 486   1              {
+ 487   2                      bCalibrationFlg = 1;                                    //Calibration TS2
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 9   
+
+ 488   2                      uiExtTemp2 = ((U16)ucUartBuf[3]<<8)|ucUartBuf[4];
+ 489   2                      ucExtcaliSwitch1 |= 0x08;
+ 490   2      
+ 491   2                      UART_SEND_ACK;
+ 492   2              }
+ 493   1              else
+ 494   1              {
+ 495   2                      UART_SEND_NACK; 
+ 496   2              }
+ 497   1      }
+ 498          
+ 499          
+ 500          /*******************************************************************************
+ 501          Function: CaliRTC(void)
+ 502          Description:  
+ 503          Input:          
+ 504          Output: 
+ 505          Others:
+ 506          *******************************************************************************/
+ 507          void CalibRTC(void)
+ 508          {
+ 509   1              U8 i;
+ 510   1              
+ 511   1              if(ucUartBuf[3+ucUartBuf[UART_LENGTH]] == CRC8cal(&ucUartBuf, ucUartBuf[UART_LENGTH]+3))
+ 512   1              {
+ 513   2                      for(i=0; i<6; i++)
+ 514   2                      {
+ 515   3                              bCalibrationFlg = 1;
+ 516   3                              ucExtRTC[i] = ucUartBuf[3+i];
+ 517   3                              ucExtcaliSwitch1 |= 0x80;
+ 518   3                      }
+ 519   2              }
+ 520   1      }
+ 521          
+ 522          
+ 523          /*******************************************************************************
+ 524          Function:UartWrCmdProcess() 
+ 525          Description:  Processing Uart write command  
+ 526          Input:   NULL
+ 527          Output: NULL
+ 528          Others:
+ 529          *******************************************************************************/
+ 530          void UartWrCmdProcess(void)
+ 531          {
+ 532   1          U8 xdata *rdaddr;
+ 533   1          switch(ucUartBuf[UART_CMD_NO])
+ 534   1          {
+ 535   2              case MANUFACTURE_COMMAND:
+ 536   2                  WriteManufacture();
+ 537   2              break;
+ 538   2              case DATA_FLASH_COMMAND:  
+ 539   2                  ReadSubClassID();               //accept command is dataflashcommand 0x77
+ 540   2              break;
+ 541   2              case CALI_CUR_COMMAND:
+ 542   2                  CalibCurrent();
+ 543   2              break;
+ 544   2              case CALI_VOL_COMMAND:
+ 545   2                  CalibVoltage();
+ 546   2              break;
+ 547   2              case CALI_ZERO_CUR_COMMAND:
+ 548   2                  CalibCurOffset();
+ 549   2              break;
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 10  
+
+ 550   2              case CALI_TS1_COMMAND:
+ 551   2                  CalibTS1();
+ 552   2              break;
+ 553   2              case CALI_TS2_COMMAND:
+ 554   2                  CalibTS2();
+ 555   2              break;
+ 556   2      
+ 557   2              case CALI_RTC_COMMAND:
+ 558   2                  CalibRTC();
+ 559   2              break;
+ 560   2      //        case ISP_COMMAND:
+ 561   2      //            ISPHandshake();
+ 562   2      //        break;
+ 563   2              case SUB_PAGE1:
+ 564   2                  rdaddr = (U8 xdata *)Page1WrRdFuncTable[ucSubClassID];
+ 565   2                  UartWriteInfo(rdaddr);
+ 566   2              break;
+ 567   2              case SUB_PAGE2:
+ 568   2                  rdaddr = (U8 xdata *)Page2WrRdFuncTable[ucSubClassID];
+ 569   2                  UartWriteInfo(rdaddr);
+ 570   2              break;
+ 571   2              
+ 572   2              case CMD_E2PROM_ERASE:
+ 573   2                  if(ucUartBuf[UART_DATA] == 0x55)    //Testing equipment is properly
+ 574   2                  {
+ 575   3                      bE2PProcessFlg = 1;
+ 576   3                      bE2PErase = 1;
+ 577   3                      UART_SEND_ACK;
+ 578   3                  }
+ 579   2                  else
+ 580   2                  {
+ 581   3                      UART_SEND_NACK;
+ 582   3                  }
+ 583   2              break;
+ 584   2          }
+ 585   1      }
+ 586          
+ 587          
+ 588          
+ 589          /*******************************************************************************
+ 590          Function:  InterruptUART()
+ 591          Description:  Receive and transmit data via UART
+ 592                  ucUartBuf[0]--Slave Addr
+ 593                  ucUartBuf[1]--CMD No.
+ 594                  ucUartBuf[2]--Offset
+ 595                  ucUartBuf[3]--Data Length
+ 596                  ucUartBuf[4...]--Data
+ 597          Input:          
+ 598          Output: 
+ 599          Others:
+ 600          *******************************************************************************/
+ 601          
+ 602          void InterruptUART(void) interrupt 4
+ 603          {
+ 604   1              _push_(INSCON);
+ 605   1          BANK0_SEL;
+ 606   1      
+ 607   1              if(RI)                              //RT1 interrupt means MCU recept data though UART
+ 608   1              {
+ 609   2                      ucUartBuf[ucUartBufPT] = SBUF;                  //transfer SBUF to the ucUartBuf
+ 610   2                      ucUartBufPT++;
+ 611   2                      if(ucUartBufPT >= 80)
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 11  
+
+ 612   2                      {
+ 613   3                              ucUartBufPT = 0;
+ 614   3                      }
+ 615   2                      if(ucUartBufPT == 1)
+ 616   2                      {
+ 617   3                              if((ucUartBuf[UART_SLAVE_ADDR]&0xFE) == SADDR)      //received first data is not the slave ADDR
+ 618   3                              {
+ 619   4                                      if((ucUartBuf[UART_SLAVE_ADDR]&0x01)==0)         //bit 7 of UartADDR is R/W 0--R, 1--W
+ 620   4                                      {
+ 621   5                                              bUartReadFlg = 1;                                       //this communication is read
+ 622   5                                      }
+ 623   4                                      else
+ 624   4                                      {
+ 625   5                                              bUartWriteFlg = 1;                                      //this communication is write        
+ 626   5                                      }
+ 627   4                              }
+ 628   3                              else
+ 629   3                              {
+ 630   4                                      ucUartBufPT = 0;                       //ucUartBufPT reset to 0  
+ 631   4                              }
+ 632   3                      }
+ 633   2                      if(bUartReadFlg)
+ 634   2                      {
+ 635   3                              if(ucUartBufPT == 3 
+ 636   3                                      && ucUartBuf[UART_CMD_NO] != ISP_COMMAND)
+ 637   3                              {
+ 638   4                                      UartRdCmdProcess();                 //Read the command process                  
+ 639   4                              }
+ 640   3                              else if (ucUartBuf[UART_CMD_NO] == ISP_COMMAND
+ 641   3                                                      && ucUartBufPT > (ucUartBuf[3]+3))
+ 642   3                              {
+ 643   4                                      ucUartBufPT = 0;
+ 644   4                      ucUartSndLength = 1;
+ 645   4                                      ISPHandshake();
+ 646   4                              }
+ 647   3                      }
+ 648   2                      
+ 649   2                      if(bUartWriteFlg)
+ 650   2                      {
+ 651   3                              if(ucUartBufPT > (ucUartBuf[UART_LENGTH]+3))        //If a write operation, and complete all the data h
+             -as been received
+ 652   3                              {
+ 653   4                                      UartWrCmdProcess();                                     //Write the command peocess
+ 654   4                                      bUartWriteFlg = 0;                                      //PC write MCU communiaction over
+ 655   4                                      ucUartBufPT = 0;
+ 656   4                              }
+ 657   3                      }
+ 658   2                      RI = 0;
+ 659   2                      bUartSndAckFlg = 0;
+ 660   2              }
+ 661   1              
+ 662   1              if(TI)
+ 663   1              {
+ 664   2                      if((ucUartBufPT==0) || (ucUartBufPT>=ucUartBuf[UART_LENGTH]+3))
+ 665   2                      {
+ 666   3                              REN = 1;                                        //Allow UART receive data
+ 667   3                              ucUartBufPT = 0;
+ 668   3                              bUartReadFlg = 0;                       //PC read MCU communication over
+ 669   3                              ucUartBuf[0] = 0;
+ 670   3                              ucUartBuf[1] = 0;
+ 671   3                              ucUartBuf[2] = 0;
+ 672   3                              ucUartBuf[3] = 0;
+C51 COMPILER V9.00   UART                                                                  12/09/2019 17:56:05 PAGE 12  
+
+ 673   3                      }
+ 674   2                      else
+ 675   2                      {
+ 676   3                              ucUartBufPT++;
+ 677   3                              SBUF = ucUartBuf[ucUartBufPT];
+ 678   3                      }
+ 679   2                      TI = 0;
+ 680   2                      bUartSndAckFlg = 1;
+ 681   2              }
+ 682   1                      
+ 683   1              ucIdleTimerCnt = 0;
+ 684   1              ucPDTimerCnt = 0;                       //If communication is clear the count
+ 685   1              ucUartTimeoutCnt = 0;
+ 686   1      
+ 687   1              _pop_(INSCON);
+ 688   1      }
+ 689          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1977    ----
+   CONSTANT SIZE    =     82    ----
+   XDATA SIZE       =   ----       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

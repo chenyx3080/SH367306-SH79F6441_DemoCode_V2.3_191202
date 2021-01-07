@@ -1,0 +1,1000 @@
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE AFEPROCESS
+OBJECT MODULE PLACED IN .\output\AfeProcess.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\AfeProcess.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(.\header) DEBUG 
+                    -OBJECTEXTEND PRINT(.\output\AfeProcess.lst) OBJECT(.\output\AfeProcess.obj)
+
+line level    source
+
+   1          /********************************************************************************
+   2          Copyright (C), Sinowealth Electronic. Ltd.
+   3          Author:         Sino
+   4          Version:        V0.0
+   5          Date:           2014/05/30
+   6          History:
+   7                  V0.0            2014/05/30               Preliminary
+   8          ********************************************************************************/
+   9          #include "system.h"
+  10          #include "Calibrate.h"
+  11          
+  12          /*******************************************************************************
+  13          Function: VolProtect(void)
+  14          Description:  
+  15          Input:          
+  16          Output: 
+  17          Others:
+  18          *******************************************************************************/
+  19          void VolProtect(void)
+  20          {
+  21   1              if(!bHV)
+  22   1              {
+  23   2                      if(uiCellVmax > E2uiOVvol)
+  24   2                      {               
+  25   3                              if(++ucOVcnt >= OV_DELAY_CNT)
+  26   3                              {
+  27   4                                      bHV = 1;
+  28   4                                      ucOVcnt = 0;
+  29   4                                      ucOVRcnt = 0;
+  30   4                              }
+  31   3                      }
+  32   2                      else if(uiCellVmax < E2uiOVRvol)
+  33   2                      {
+  34   3                              if(ucOVcnt > 0)
+  35   3                              {
+  36   4                                      ucOVcnt--;
+  37   4                              }
+  38   3                      }
+  39   2              }
+  40   1              else
+  41   1              {
+  42   2                      if(uiCellVmax < E2uiOVRvol)
+  43   2                      {                       
+  44   3                              if(++ucOVRcnt >= OVR_DELAY_CNT)
+  45   3                              {
+  46   4                                      bHV = 0;
+  47   4                                      ucOVcnt = 0;
+  48   4                                      ucOVRcnt = 0;
+  49   4                              }
+  50   3                      }
+  51   2                      else if(uiCellVmax > E2uiOVvol)
+  52   2                      {
+  53   3                              if(ucOVRcnt > 0)
+  54   3                              {
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 2   
+
+  55   4                                      ucOVRcnt--;
+  56   4                              }
+  57   3                      }
+  58   2              }
+  59   1      
+  60   1              if(!bUV)
+  61   1              {
+  62   2                      if(uiCellVmin < E2uiUVvol)
+  63   2                      {               
+  64   3                              if(++ucUVcnt >= UV_DELAY_CNT)
+  65   3                              {
+  66   4                                      bUV = 1;
+  67   4                                      ucUVcnt = 0;
+  68   4                                      ucUVRcnt = 0;
+  69   4      
+  70   4                          bChkChgerFlg = 1;
+  71   4                          bChgerConectFlg = 0;
+  72   4                                      ucChgerCnt = 0;
+  73   4                              REG.AFESCONF1 |= 0x01;
+  74   4                              TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);        //使能充电器检测
+  75   4                              }
+  76   3                      }
+  77   2                      else if(uiCellVmin > E2uiUVRvol)
+  78   2                      {
+  79   3                              if(ucUVcnt > 0)
+  80   3                              {
+  81   4                                      ucUVcnt--;
+  82   4                              }
+  83   3                      }
+  84   2              }
+  85   1              else
+  86   1              {
+  87   2                      if(uiCellVmin > E2uiUVRvol)
+  88   2                      {                       
+  89   3                              if(++ucUVRcnt >= UVR_DELAY_CNT)
+  90   3                              {
+  91   4                                      bUV = 0;
+  92   4                                      ucUVcnt = 0;
+  93   4                                      ucUVRcnt = 0;
+  94   4                              }
+  95   3                      }
+  96   2                      else if(uiCellVmin < E2uiUVvol)
+  97   2                      {
+  98   3                              if(ucUVRcnt > 0)
+  99   3                              {
+ 100   4                                      ucUVRcnt--;
+ 101   4                              }
+ 102   3                      }
+ 103   2              }
+ 104   1      }
+ 105          
+ 106          
+ 107          /*******************************************************************************
+ 108          Function: TempeProtect(void)
+ 109          Description:  
+ 110          Input:          
+ 111          Output: 
+ 112          Others:
+ 113          *******************************************************************************/
+ 114          void TempeProtect(void)                                                         //TempNum=0, Support one temperature 
+ 115          {
+ 116   1              if(!bOTC)
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 3   
+
+ 117   1              {
+ 118   2                      if(uiTempeMax > E2uiTempOTC)
+ 119   2                      {
+ 120   3                              if(++ucOTCcnt >= TEMPE_DELAY_CNT)
+ 121   3                              {
+ 122   4                                      bOTC = 1;
+ 123   4                                      ucOTCcnt = 0;
+ 124   4                                      ucOTCRcnt = 0;
+ 125   4                              }
+ 126   3                      }
+ 127   2                      else if(uiTempeMax < E2uiTempOTCR)
+ 128   2                      {
+ 129   3                              if(ucOTCcnt > 0)
+ 130   3                              {
+ 131   4                                      ucOTCcnt--;
+ 132   4                              }
+ 133   3                      }
+ 134   2              }
+ 135   1              else
+ 136   1              {
+ 137   2                      if(uiTempeMax < E2uiTempOTCR)
+ 138   2                      {
+ 139   3                              if(++ucOTCRcnt >= TEMPER_DELAY_CNT)
+ 140   3                              {
+ 141   4                                      bOTC = 0;
+ 142   4                                      ucOTCcnt = 0;
+ 143   4                                      ucOTCRcnt = 0;
+ 144   4                              }
+ 145   3                      }
+ 146   2                      else if(uiTempeMax > E2uiTempOTC)
+ 147   2                      {
+ 148   3                              if(ucOTCRcnt > 0)
+ 149   3                              {
+ 150   4                                      ucOTCRcnt--;
+ 151   4                              }
+ 152   3                      }
+ 153   2              }
+ 154   1      
+ 155   1              if(!bUTC)
+ 156   1              {
+ 157   2                      if(uiTempeMin < E2uiTempUTC)
+ 158   2                      {
+ 159   3                              if(++ucUTCcnt >= TEMPE_DELAY_CNT)
+ 160   3                              {
+ 161   4                                      bUTC = 1;
+ 162   4                                      ucUTCcnt = 0;
+ 163   4                                      ucUTCRcnt = 0;
+ 164   4                              }
+ 165   3                      }
+ 166   2                      else if(uiTempeMin > E2uiTempUTCR)
+ 167   2                      {
+ 168   3                              if(ucUTCcnt > 0)
+ 169   3                              {
+ 170   4                                      ucUTCcnt--;
+ 171   4                              }
+ 172   3                      }
+ 173   2              }
+ 174   1              else
+ 175   1              {
+ 176   2                      if(uiTempeMin > E2uiTempUTCR)
+ 177   2                      {
+ 178   3                              if(++ucUTCRcnt >= TEMPER_DELAY_CNT)
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 4   
+
+ 179   3                              {
+ 180   4                                      bUTC = 0;
+ 181   4                                      ucUTCcnt = 0;
+ 182   4                                      ucUTCRcnt = 0;
+ 183   4                              }
+ 184   3                      }
+ 185   2                      else if(uiTempeMin < E2uiTempUTC)
+ 186   2                      {
+ 187   3                              if(ucUTCRcnt > 0)
+ 188   3                              {
+ 189   4                                      ucUTCRcnt--;
+ 190   4                              }
+ 191   3                      }
+ 192   2              }
+ 193   1      
+ 194   1              if(!bOTD)
+ 195   1              {
+ 196   2                      if(uiTempeMax > E2uiTempOTD)
+ 197   2                      {
+ 198   3                              if(++ucOTDcnt >= TEMPE_DELAY_CNT)
+ 199   3                              {
+ 200   4                                      bOTD = 1;
+ 201   4                                      ucOTDcnt = 0;
+ 202   4                                      ucOTDRcnt = 0;
+ 203   4                              }
+ 204   3                      }
+ 205   2                      else if(uiTempeMax < E2uiTempOTDR)
+ 206   2                      {
+ 207   3                              if(ucOTDcnt > 0)
+ 208   3                              {
+ 209   4                                      ucOTDcnt--;
+ 210   4                              }
+ 211   3                      }
+ 212   2              }
+ 213   1              else
+ 214   1              {
+ 215   2                      if(uiTempeMax < E2uiTempOTDR)
+ 216   2                      {
+ 217   3                              if(++ucOTDRcnt >= TEMPER_DELAY_CNT)
+ 218   3                              {
+ 219   4                                      bOTD = 0;
+ 220   4                                      ucOTDcnt = 0;
+ 221   4                                      ucOTDRcnt = 0;
+ 222   4                              }
+ 223   3                      }
+ 224   2                      else if(uiTempeMax > E2uiTempOTD)
+ 225   2                      {
+ 226   3                              if(ucOTDRcnt > 0)
+ 227   3                              {
+ 228   4                                      ucOTDRcnt--;
+ 229   4                              }
+ 230   3                      }
+ 231   2              }
+ 232   1      
+ 233   1              if(!bUTD)
+ 234   1              {
+ 235   2                      if(uiTempeMin < E2uiTempUTD)
+ 236   2                      {
+ 237   3                              if(++ucUTDcnt >= TEMPE_DELAY_CNT)
+ 238   3                              {
+ 239   4                                      bUTD = 1;
+ 240   4                                      ucUTDcnt = 0;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 5   
+
+ 241   4                                      ucUTDRcnt = 0;
+ 242   4                              }
+ 243   3                      }
+ 244   2                      else if(uiTempeMin > E2uiTempUTDR)
+ 245   2                      {
+ 246   3                              if(ucUTDcnt > 0)
+ 247   3                              {
+ 248   4                                      ucUTDcnt--;
+ 249   4                              }
+ 250   3                      }
+ 251   2              }
+ 252   1              else
+ 253   1              {
+ 254   2                      if(uiTempeMin > E2uiTempUTDR)
+ 255   2                      {
+ 256   3                              if(++ucUTDRcnt >= TEMPER_DELAY_CNT)
+ 257   3                              {
+ 258   4                                      bUTD = 0;
+ 259   4                                      ucUTDcnt = 0;
+ 260   4                                      ucUTDRcnt = 0;
+ 261   4                              }
+ 262   3                      }
+ 263   2                      else if(uiTempeMin < E2uiTempUTD)
+ 264   2                      {
+ 265   3                              if(ucUTDRcnt > 0)
+ 266   3                              {
+ 267   4                                      ucUTDRcnt--;
+ 268   4                              }
+ 269   3                      }
+ 270   2              }
+ 271   1      }
+ 272          
+ 273          
+ 274          /*******************************************************************************
+ 275          Function: ChkMosStatus(void)
+ 276          Description:  
+ 277          Input:          
+ 278          Output: 
+ 279          Others:
+ 280          *******************************************************************************/
+ 281          void ChkMosStatus(void)
+ 282          {
+ 283   1          bCHGMOS = 1;
+ 284   1          bDSGMOS = 1;
+ 285   1      
+ 286   1              if(bAFE_OV || bCTO)                                                                                               
+ 287   1              {
+ 288   2                      bCHGMOS = 0;
+ 289   2              }
+ 290   1      
+ 291   1              if( bOTD || bUTD || bUV || bOCD || bAFE_SC || (bFD&&bDSGEnd) || bLoadConectFlg || bCTO)
+ 292   1              {
+ 293   2                      bDSGMOS = 0;
+ 294   2                      PWM2CON &= ~0x01;
+ 295   2                      DSG1PWM = 0;
+ 296   2              }
+ 297   1              else
+ 298   1              {
+ 299   2                      DSG1PWM = 1;
+ 300   2                      if(ucDsgingSpeed != 2)
+ 301   2                      {
+ 302   3                              PWM2CON |= 0x01;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 6   
+
+ 303   3                      }
+ 304   2              }
+ 305   1      
+ 306   1          if(!bDSGING)
+ 307   1          {
+ 308   2              if(bOTC || bUTC || bHV || bOCC || (bFC&&bCHGEnd))                                                                                                       
+ 309   2              {
+ 310   3                  bCHGMOS = 0;
+ 311   3              }
+ 312   2          }
+ 313   1              if(bOCD || bAFE_SC || (bChkChgerFlg&&!bChgerConectFlg))
+ 314   1              {
+ 315   2              bCHGMOS = 0;
+ 316   2              }
+ 317   1      }
+ 318          
+ 319          
+ 320          /*******************************************************************************
+ 321          Function: ControlMos(void)
+ 322          Description:  
+ 323          Input:          
+ 324          Output: 
+ 325          Others:
+ 326          *******************************************************************************/
+ 327          void ControlMos(void)
+ 328          {
+ 329   1          if(bCHGMOS)
+ 330   1          {
+ 331   2              REG.AFESCONF2 |= 0x01;    
+ 332   2          }
+ 333   1          else
+ 334   1          {
+ 335   2              REG.AFESCONF2 &= ~0x01;    
+ 336   2          }
+ 337   1      
+ 338   1          if(bDSGMOS)
+ 339   1          {
+ 340   2              REG.AFESCONF2 |= 0x02;    
+ 341   2          }
+ 342   1          else
+ 343   1          {
+ 344   2              REG.AFESCONF2 &= ~0x02;    
+ 345   2          }
+ 346   1              
+ 347   1              if(REG.AFESCONF2 != AFESCONF2Bk)                        //If the two variables of the same, is not written to AFE
+ 348   1              {
+ 349   2                      AFESCONF2Bk = REG.AFESCONF2;
+ 350   2              TwiWriteAFE(AFE_SCONF2, &REG.AFESCONF2);                                                
+ 351   2              }
+ 352   1      }
+ 353          
+ 354          
+ 355          /*******************************************************************************
+ 356          Function: RecoveryOC(void)
+ 357          Description:  
+ 358          Input:          
+ 359          Output: 
+ 360          Others:
+ 361          *******************************************************************************/
+ 362          void RecoveryOC(void)
+ 363          {
+ 364   1              if(bOCRC_EN)
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 7   
+
+ 365   1              {
+ 366   2                      if(bOCD || bAFE_SC)
+ 367   2                      {
+ 368   3                              if(++uiOCDRcnt > OCDR_DELAY_CNT)
+ 369   3                              {
+ 370   4                      bChkLoadFlg = 0;
+ 371   4                      ucLoadRCnt = 0;    
+ 372   4                                      uiOCDRcnt = 0;
+ 373   4                                      bOCD = 0;
+ 374   4                      if(bAFE_SC)
+ 375   4                      {
+ 376   5                                      bAFE_SC = 0;
+ 377   5                          REG.AFESCONF1 |= 0x80;
+ 378   5                          TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);
+ 379   5                          REG.AFESCONF1 &= ~0x80;
+ 380   5                          TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);
+ 381   5                      }
+ 382   4                              }
+ 383   3                      }
+ 384   2                      
+ 385   2                      if(bOCC)
+ 386   2                      {                       
+ 387   3                              if(++uiOCCRcnt > OCCR_DELAY_CNT)
+ 388   3                              {
+ 389   4                                      uiOCCRcnt = 0;
+ 390   4                                      bOCC = 0;
+ 391   4      
+ 392   4                          bChkChgerRFlg = 0;
+ 393   4                                      ucChgerRCnt = 0;
+ 394   4                              }
+ 395   3                      }
+ 396   2              }
+ 397   1      }
+ 398          
+ 399          
+ 400          /*******************************************************************************
+ 401          Function: CheckLoad(void)
+ 402          Description:  
+ 403          Input:          
+ 404          Output: 
+ 405          Others:
+ 406          *******************************************************************************/
+ 407          void CheckLoad(void)
+ 408          {
+ 409   1          if(!bChkLoadFlg)
+ 410   1          {
+ 411   2              if(bUV)
+ 412   2              {
+ 413   3                  bLoadConectFlg = 1;
+ 414   3                  bUVBkFlg = 1;
+ 415   3              }
+ 416   2              else if(bUVBkFlg && !bUV)
+ 417   2              {
+ 418   3                              bUVBkFlg = 0;
+ 419   3                  bChkLoadFlg = 1;
+ 420   3                              ucLoadRCnt = 0;
+ 421   3                      REG.AFESCONF1 |= 0x02;
+ 422   3                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);                                        //enable Load Detect    
+ 423   3              }
+ 424   2      
+ 425   2              if(bOCD || bAFE_SC)
+ 426   2              {
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 8   
+
+ 427   3                  bChkLoadFlg = 1;
+ 428   3                  bLoadConectFlg = 1;
+ 429   3                              ucLoadRCnt = 0;
+ 430   3                      REG.AFESCONF1 |= 0x02;
+ 431   3                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);        //使能负载检测
+ 432   3              }
+ 433   2          }
+ 434   1          else
+ 435   1          {
+ 436   2              TWIReadAFE(AFE_BSTATUS, &REG.AFEBSTATUS);
+ 437   2              if((REG.AFEBSTATUS&0x02) == 0)
+ 438   2              {
+ 439   3                  if(++ucLoadRCnt >= (E2ucDelayLoadR*5-1))             //4*125mS
+ 440   3                  {
+ 441   4                      bChkLoadFlg = 0;
+ 442   4                      bLoadConectFlg = 0;
+ 443   4                                      bChkChgerFlg = 0;
+ 444   4                                      bOCD = 0;
+ 445   4                      ucLoadRCnt = 0;    
+ 446   4                              REG.AFESCONF1 &= ~0x02;
+ 447   4                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);                                        // close Load Detect
+ 448   4                                      if(bAFE_SC)
+ 449   4                                      {
+ 450   5                                              bAFE_SC = 0;
+ 451   5                                      REG.AFESCONF1 |= 0x80;
+ 452   5                                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);
+ 453   5                                      REG.AFESCONF1 &= ~0x80;
+ 454   5                                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);
+ 455   5                                      }
+ 456   4                  }
+ 457   3              }
+ 458   2          }
+ 459   1      }
+ 460          
+ 461          
+ 462          /*******************************************************************************
+ 463          Function: CheckCharger(void)
+ 464          Description:  
+ 465          Input:          
+ 466          Output: 
+ 467          Others:
+ 468          *******************************************************************************/
+ 469          void CheckCharger(void)
+ 470          {
+ 471   1          if(bChkChgerFlg)
+ 472   1              {
+ 473   2              TWIReadAFE(AFE_BSTATUS, &REG.AFEBSTATUS);
+ 474   2              if((REG.AFEBSTATUS&0x01) != 0)
+ 475   2              {
+ 476   3                              if(++ucChgerCnt >= E2ucDelayLoadR*5)
+ 477   3                              {
+ 478   4                                      bChkChgerFlg = 0;
+ 479   4                      bChgerConectFlg = 1;
+ 480   4                                      ucChgerCnt = 0;
+ 481   4                              REG.AFESCONF1 &= ~0x01;
+ 482   4                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);                                        // close Charge detect                          
+ 483   4                              }
+ 484   3                      }
+ 485   2              }
+ 486   1      
+ 487   1          if(bChkChgerRFlg)
+ 488   1          {
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 9   
+
+ 489   2              TWIReadAFE(AFE_BSTATUS, &REG.AFEBSTATUS);
+ 490   2              if((REG.AFEBSTATUS&0x01) == 0)
+ 491   2              {
+ 492   3                  if(++ucChgerRCnt >= E2ucDelayLoadR*5)             //4*125mS
+ 493   3                  {
+ 494   4                      bChkChgerRFlg = 0;
+ 495   4                                      bOCC = 0;
+ 496   4                      ucChgerRCnt = 0;    
+ 497   4                              REG.AFESCONF1 &= ~0x01;
+ 498   4                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);                                        // close Charge detect
+ 499   4                  }
+ 500   3              }
+ 501   2              }
+ 502   1      }
+ 503          
+ 504          
+ 505          /*******************************************************************************
+ 506          Function: VolProcess()
+ 507          Description:  
+ 508          Input:          
+ 509          Output: 
+ 510          Others:
+ 511          *******************************************************************************/        
+ 512          void VolProcess(void)
+ 513          {
+ 514   1              if(!bBalancingFlg)
+ 515   1              {
+ 516   2                  if(!bFC)
+ 517   2                  {
+ 518   3                      if((uiCellVmax>E2uiChgEndVol) && (Info.slCurr<=E2siChgEndCur))   //charge end voltage 
+ 519   3                      {
+ 520   4                              if(++ucChgEndcnt >= E2ucDelayChgEnd)
+ 521   4                              {
+ 522   5                                      bFC = 1;
+ 523   5                                      ucChgEndcnt = 0;
+ 524   5                              ucChgEndRcnt = 0;
+ 525   5                              }
+ 526   4                      }
+ 527   3                      else
+ 528   3                      {
+ 529   4                              if(ucChgEndcnt > 0)
+ 530   4                              {
+ 531   5                                      ucChgEndcnt--;
+ 532   5                              }
+ 533   4                      }
+ 534   3                  }
+ 535   2                  else
+ 536   2                  {
+ 537   3                      if(uiCellVmin < E2uiChgEndVol) //charge end recover voltage
+ 538   3                      {
+ 539   4                              if(++ucChgEndRcnt >= E2ucDelayChgEnd)
+ 540   4                              {
+ 541   5                                      bFC = 0;
+ 542   5                              ucChgEndcnt = 0;
+ 543   5                                      ucChgEndRcnt = 0;
+ 544   5                              }
+ 545   4                      }
+ 546   3                      else
+ 547   3                      {
+ 548   4                              if(ucChgEndRcnt > 0)
+ 549   4                              {
+ 550   5                                      ucChgEndRcnt--;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 10  
+
+ 551   5                              }
+ 552   4                      }
+ 553   3                  }
+ 554   2              
+ 555   2                  if(!bFD)
+ 556   2                  {
+ 557   3                      if(uiCellVmin<E2uiDsgEndVol)      //discharge end voltage 
+ 558   3                      {
+ 559   4                              if(++ucDsgEndcnt >= E2ucDelayDsgEnd)
+ 560   4                              {
+ 561   5                                      bFD = 1;
+ 562   5                                      ucDsgEndcnt = 0;
+ 563   5                              ucDsgEndRcnt = 0;
+ 564   5                              }
+ 565   4                      }
+ 566   3                      else
+ 567   3                      {
+ 568   4                              if(ucDsgEndcnt > 0)
+ 569   4                              {
+ 570   5                                      ucDsgEndcnt--;
+ 571   5                              }
+ 572   4                      }
+ 573   3                  }
+ 574   2                  else
+ 575   2                  {
+ 576   3                      if(uiCellVmin > E2uiDsgEndVol)     //discharge end recover voltage
+ 577   3                      {                                                                                 
+ 578   4                              if(++ucDsgEndRcnt >= E2ucDelayDsgEnd)
+ 579   4                              {
+ 580   5                                      bFD = 0;
+ 581   5                                      ucDsgEndcnt = 0;
+ 582   5                                      ucDsgEndRcnt = 0;
+ 583   5                              }
+ 584   4                      }
+ 585   3                      else
+ 586   3                      {
+ 587   4                              if(ucDsgEndRcnt > 0)
+ 588   4                              {
+ 589   5                                      ucDsgEndRcnt--;
+ 590   5                              }
+ 591   4                      }
+ 592   3                  }
+ 593   2              }
+ 594   1      }
+ 595          
+ 596          
+ 597          /*******************************************************************************
+ 598          Function: CurrProtect(void)
+ 599          Description:  
+ 600          Input:          
+ 601          Output: 
+ 602          Others:
+ 603          *******************************************************************************/
+ 604          void CurrProtect(void)
+ 605          {
+ 606   1              if(!bOCC)
+ 607   1          {
+ 608   2                      if(slCadcCurrent > E2slOCCvol)                     //CADC  cycle is 64ms
+ 609   2                      {
+ 610   3                  if(++ucOCCcnt > OCC_DELAY_CNT)
+ 611   3                  {
+ 612   4                      bOCC = 1;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 11  
+
+ 613   4                      ucOCCcnt = 0;
+ 614   4      
+ 615   4                          bChkChgerRFlg = 1;
+ 616   4                                      ucChgerRCnt = 0;
+ 617   4                              REG.AFESCONF1 |= 0x01;
+ 618   4                              TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);                                        // close VADC
+ 619   4                  }
+ 620   3                      }
+ 621   2                      else
+ 622   2                      {
+ 623   3                  if(ucOCCcnt > 0)
+ 624   3                  {
+ 625   4                              ucOCCcnt--;     
+ 626   4                  }
+ 627   3                      }
+ 628   2          }
+ 629   1      
+ 630   1              if(!bOCD)
+ 631   1          {
+ 632   2                      if(slCadcCurrent < E2slOCDvol)                     //CADC  cycle is 64ms
+ 633   2                      {
+ 634   3                  if(++ucOCDcnt > OCD_DELAY_CNT)
+ 635   3                  {
+ 636   4                      ucOCDcnt = 0;
+ 637   4                      bOCD = 1;
+ 638   4                  }
+ 639   3                      }
+ 640   2                      else
+ 641   2                      {
+ 642   3                  if(ucOCDcnt > 0)
+ 643   3                  {
+ 644   4                              ucOCDcnt--;     
+ 645   4                  }
+ 646   3                      }
+ 647   2          }                                                                                            
+ 648   1      }
+ 649          
+ 650          
+ 651          /*******************************************************************************
+ 652          Function: CurrProcess(void)
+ 653          Description:  
+ 654          Input:          
+ 655          Output: 
+ 656          Others:
+ 657          *******************************************************************************/
+ 658          void CurrProcess(void)
+ 659          {
+ 660   1              U8 i;
+ 661   1              S32 Tempdata=0;
+ 662   1      
+ 663   1              TWIReadAFE(AFE_CURH, (U8 xdata *)&AFE.siCurr);  //通过TWI读取CADC采集的电流值
+ 664   1      
+ 665   1              if((AFE.siCurr&0x1000) != 0)                                    //根据bit12判断是否为负数(放电电流为负值)，如为负值高位补0
+ 666   1              {
+ 667   2                      AFE.siCurr|=0xE000;
+ 668   2              }
+ 669   1              slCadcCurrent = (S32)CALICUR*(AFE.siCurr-E2siCadcOffset)/E2siCadcGain;
+ 670   1      
+ 671   1              slCadcCurBuf[ucCadcCnt] = slCadcCurrent;                //对连续采集的16次电流取平均值，作为当前电流值
+ 672   1              if(++ucCadcCnt >= 16)
+ 673   1              {
+ 674   2                      ucCadcCnt = 0;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 12  
+
+ 675   2              }
+ 676   1              for(i=0; i<16; i++)
+ 677   1              {
+ 678   2                      Tempdata += slCadcCurBuf[i];
+ 679   2              }
+ 680   1              slCadcCurAverage = Tempdata/16;                         
+ 681   1         
+ 682   1              bDSGING = 0;
+ 683   1              bCHGING = 0;
+ 684   1              if(slCadcCurAverage < (-E2siDfilterCur))
+ 685   1              {
+ 686   2                      bDSGING = 1;
+ 687   2                      UART_IRQ_DISABLE;
+ 688   2                      Info.slCurr = slCadcCurAverage;
+ 689   2                      UART_IRQ_ENABLE;
+ 690   2              }
+ 691   1              else if(slCadcCurAverage > E2siDfilterCur)
+ 692   1              {
+ 693   2                      bCHGING = 1;            
+ 694   2                      UART_IRQ_DISABLE;
+ 695   2                      Info.slCurr = slCadcCurAverage;
+ 696   2                      UART_IRQ_ENABLE;
+ 697   2              }
+ 698   1              else
+ 699   1              {
+ 700   2                      UART_IRQ_DISABLE;
+ 701   2                      Info.slCurr = 0;
+ 702   2                      UART_IRQ_ENABLE;
+ 703   2              }
+ 704   1      
+ 705   1          if(bCHGING)                                         //debounce: flick led charging
+ 706   1          {
+ 707   2              if(!bLEDChgFlg)
+ 708   2              {
+ 709   3                  if(++ucLedChgCnt > 8)
+ 710   3                  {
+ 711   4                      bLEDChgFlg = 1;
+ 712   4                      ucLedChgCnt = 0;
+ 713   4                  }
+ 714   3              }
+ 715   2              else
+ 716   2              {
+ 717   3                  if(ucLedChgCnt > 0)
+ 718   3                  {
+ 719   4                      ucLedChgCnt--;
+ 720   4                  }
+ 721   3              }
+ 722   2          }
+ 723   1          else
+ 724   1          {
+ 725   2              if(!bLEDChgFlg)
+ 726   2              {
+ 727   3                  if(ucLedChgCnt > 0)
+ 728   3                  {
+ 729   4                      ucLedChgCnt--;
+ 730   4                  }
+ 731   3              }
+ 732   2              else
+ 733   2              {
+ 734   3                  if(++ucLedChgCnt > 8)
+ 735   3                  {
+ 736   4                      bLEDChgFlg = 0;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 13  
+
+ 737   4                      ucLedChgCnt = 0;
+ 738   4                  }
+ 739   3              }    
+ 740   2          }
+ 741   1      
+ 742   1              CurrProtect();
+ 743   1      }
+ 744          
+ 745          
+ 746          /*******************************************************************************
+ 747          Function: AFERamCheck(void)
+ 748          Description: 
+ 749          Input:          
+ 750          Output: 
+ 751          Others:
+ 752          *******************************************************************************/
+ 753          void AFERamCheck(void)
+ 754          {
+ 755   1              U8 xdata RdBuf[2];
+ 756   1              U8 i;
+ 757   1      
+ 758   1              for(i=3; i<=11; i=i+2)          //从可写寄存器03H开始比较
+ 759   1              {
+ 760   2                      TWIReadAFE(i, RdBuf);
+ 761   2      
+ 762   2              if((RdBuf[0]!=*(&REG.AFEFLAG1+i)) || (RdBuf[1]!=*(&REG.AFEFLAG1+i+1)))
+ 763   2              {
+ 764   3                              if(i != 7)
+ 765   3                              {
+ 766   4                          InitAFE();          
+ 767   4                          break;
+ 768   4                              }
+ 769   3              }
+ 770   2              }
+ 771   1      }
+ 772          
+ 773          
+ 774          /*******************************************************************************
+ 775          Function: AlarmProcess(void)
+ 776          Description:  
+ 777          Input:  NULL    
+ 778          Output: NULL
+ 779          Others:
+ 780          *******************************************************************************/
+ 781          void AlarmProcess(void)
+ 782          {
+ 783   1              TWIReadAFE(AFE_FLAG1, &REG.AFEFLAG1);   //读取AFE寄存器FLAG1 & FLAG2中的Alarm标志
+ 784   1      
+ 785   1              if((REG.AFEFLAG2&0x02) != 0)    //CADC 电流转换完成
+ 786   1              {
+ 787   2                      bCADCFlg = 1;
+ 788   2              }
+ 789   1      
+ 790   1              if((REG.AFEFLAG2&0x01) != 0)    //VADC 电压转换完成
+ 791   1              {
+ 792   2                      bVADCFlg = 1;
+ 793   2              }
+ 794   1      
+ 795   1              if((REG.AFEFLAG1&0x08) != 0)    //AFE 短路保护
+ 796   1              {
+ 797   2                      bAFE_SC = 1;
+ 798   2                      Info.uiPackStatus = uiPackStatus;
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 14  
+
+ 799   2              }
+ 800   1      
+ 801   1              if((REG.AFEFLAG1&0x04) != 0)    //AFE 过压保护
+ 802   1              {
+ 803   2                      bAFE_OV = 1;
+ 804   2                      Info.uiPackStatus = uiPackStatus;
+ 805   2              }
+ 806   1      
+ 807   1              if((REG.AFEFLAG2&0x04) != 0)    //判断FLAG2的bit2是否为1，如为1则表示AFE发生过LVR，需要重新初始化AFE寄存器
+ 808   1              {
+ 809   2                      InitAFE();
+ 810   2              }
+ 811   1      }       
+ 812                  
+ 813          
+ 814          /*******************************************************************************
+ 815          Function:WaitADCConvert(void) 
+ 816          Description:  
+ 817          Input:  NULL    
+ 818          Output: NULL
+ 819          Others:
+ 820          *******************************************************************************/
+ 821          bit WaitADCConvert(void)
+ 822          {
+ 823   1          U8 i;
+ 824   1          BOOL result=0;
+ 825   1      
+ 826   1          while(i++ < 60)
+ 827   1          {
+ 828   2              Delay1ms(5);
+ 829   2              TWIReadAFE(AFE_FLAG1, &REG.AFEFLAG1);           //read AFE FLAG1 search for which state  trigged ALARM
+ 830   2              if((REG.AFEFLAG2&0x01) != 0)                            //VADC interrupt
+ 831   2              {
+ 832   3                              while(i++ < 60)
+ 833   3                      {
+ 834   4                              Delay1ms(5);
+ 835   4                              TWIReadAFE(AFE_FLAG1, &REG.AFEFLAG1);           //read AFE FLAG1 search for which state  trigged ALARM
+ 836   4                              if((REG.AFEFLAG2&0x02) != 0)                            //CADC interrupt
+ 837   4                              {
+ 838   5                                      result = 1;
+ 839   5                                  break;
+ 840   5                              }
+ 841   4                      }
+ 842   3                  break;
+ 843   3              }
+ 844   2          }
+ 845   1      
+ 846   1          return result;
+ 847   1      }
+ 848          
+ 849          
+ 850          /*******************************************************************************
+ 851          Function: PorOnProtect(void)
+ 852          Description:  
+ 853          Input:  NULL    
+ 854          Output: NULL
+ 855          Others:
+ 856          *******************************************************************************/
+ 857          void PorOnProtect(void)
+ 858          {
+ 859   1              if(uiCellVmax > E2uiOVvol)
+ 860   1              {               
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 15  
+
+ 861   2                      bHV = 1;
+ 862   2              }
+ 863   1      
+ 864   1              if(uiCellVmin < E2uiUVvol)
+ 865   1              {               
+ 866   2                      bUV = 1;
+ 867   2                  bChkChgerFlg = 1;
+ 868   2                  bChgerConectFlg = 0;
+ 869   2                      ucChgerCnt = 0;
+ 870   2                      REG.AFESCONF1 |= 0x01;
+ 871   2                      TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);                                        //enable charger detect 
+ 872   2              }
+ 873   1      
+ 874   1              if(uiTempeMax > E2uiTempOTC)
+ 875   1              {
+ 876   2                      bOTC = 1;
+ 877   2              }
+ 878   1      
+ 879   1              if(uiTempeMin < E2uiTempUTC)
+ 880   1              {
+ 881   2                      bUTC = 1;
+ 882   2              }
+ 883   1      
+ 884   1              if(uiTempeMax > E2uiTempOTD)
+ 885   1              {
+ 886   2                      bOTD = 1;
+ 887   2              }
+ 888   1      
+ 889   1              if(uiTempeMin < E2uiTempUTD)
+ 890   1              {
+ 891   2                      bUTD = 1;
+ 892   2              }
+ 893   1      
+ 894   1          ChkMosStatus();                              
+ 895   1      
+ 896   1          ControlMos();
+ 897   1      }
+ 898          
+ 899          
+ 900          /*******************************************************************************
+ 901          Function: ProtectProcess(void)
+ 902          Description:  
+ 903          Input:          
+ 904          Output: 
+ 905          Others:
+ 906          *******************************************************************************/
+ 907          void ProtectProcess(void)
+ 908          {
+ 909   1              if(!bBalancingFlg)
+ 910   1              {
+ 911   2                      VolProtect();                   
+ 912   2              }
+ 913   1      
+ 914   1              TempeProtect();                     
+ 915   1      
+ 916   1          ChkMosStatus();             
+ 917   1      
+ 918   1          ControlMos(); 
+ 919   1      
+ 920   1              Info.uiBatStatus = uiBatStatus;
+ 921   1              Info.uiPackStatus = uiPackStatus;
+ 922   1      
+C51 COMPILER V9.00   AFEPROCESS                                                            12/09/2019 17:56:04 PAGE 16  
+
+ 923   1          RecoveryOC();
+ 924   1      
+ 925   1          CheckLoad();
+ 926   1      
+ 927   1          CheckCharger();
+ 928   1      
+ 929   1      }
+ 930          
+ 931          
+ 932          /*******************************************************************************
+ 933          Function: IntoPowerDown(void)
+ 934          Description:  
+ 935          Input:          
+ 936          Output: 
+ 937          Others:    FOR UART 
+ 938          *******************************************************************************/
+ 939          void IntoPowerDown(void)
+ 940          {
+ 941   1              REG.AFESCONF10 = 0x33;                                          //进入Power Down模式
+ 942   1              TwiWriteAFE(AFE_SCONF10, &REG.AFESCONF10);
+ 943   1              REG.AFESCONF1 |= 0x20; 
+ 944   1              TwiWriteAFE(AFE_SCONF1, &REG.AFESCONF1);
+ 945   1      }
+ 946          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3121    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
